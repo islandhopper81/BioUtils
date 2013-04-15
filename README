@@ -1,0 +1,25 @@
+BioUtils version 1.0.0
+
+This is a library of perl modules and scripts for doing basic operations.
+
+INSTALLATION
+
+To install this module, run the following commands:
+
+	perl Build.PL
+	./Build
+	./Build test
+	./Build install
+
+
+DEPENDENCIES
+
+Some Perl packages from CPAN.
+
+
+COPYRIGHT AND LICENCE
+
+Copyright (C) 2013, Scott Yourstone
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
