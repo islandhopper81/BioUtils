@@ -1,0 +1,60 @@
+---
+abstract: 'A data structure for sequences'
+author:
+  - 'Scott Yourstone <scott.yourstone81@gmail.com>'
+build_requires: {}
+configure_requires:
+  Module::Build: 0.40
+dynamic_config: 1
+generated_by: 'Module::Build version 0.4002, CPAN::Meta::Converter version 2.112150'
+license: perl
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
+name: BioUtils
+provides:
+  BioUtils::Codec::QualityScores:
+    file: lib/BioUtils/Codec/QualityScores.pm
+    version: v1.0.0
+  BioUtils::ConsensusBuilder::ConsensusBuilder:
+    file: lib/BioUtils/ConsensusBuilder/ConsensusBuilder.pm
+    version: v1.0.0
+  BioUtils::ConsensusBuilder::FastqColumn:
+    file: lib/BioUtils/ConsensusBuilder/FastqColumn.pm
+    version: v1.0.0
+  BioUtils::ConsensusBuilder::FastqConsensus:
+    file: lib/BioUtils/ConsensusBuilder/FastqConsensus.pm
+    version: v1.0.0
+  BioUtils::FastaIO:
+    file: lib/BioUtils/FastaIO.pm
+    version: v1.0.0
+  BioUtils::FastaSeq:
+    file: lib/BioUtils/FastaSeq.pm
+    version: v1.0.0
+  BioUtils::FastqIO:
+    file: lib/BioUtils/FastqIO.pm
+    version: v1.0.0
+  BioUtils::FastqSeq:
+    file: lib/BioUtils/FastqSeq.pm
+    version: v1.0.0
+  BioUtils::MyX::Fastq:
+    file: lib/BioUtils/MyX/Fastq.pm
+    version: 0
+  BioUtils::QC::ContaminantFilter:
+    file: lib/BioUtils/QC/ContaminantFilter.pm
+    version: v1.0.0
+  BioUtils::QC::FastqFilter:
+    file: lib/BioUtils/QC/FastqFilter.pm
+    version: v1.0.0
+  BioUtils::SeqSet::Diagnostics:
+    file: lib/BioUtils/SeqSet/Diagnostics.pm
+    version: v1.0.0
+  MyX::Generic:
+    file: lib/MyX/Generic.pm
+    version: v1.0.0
+requires:
+  Test::More: 0
+  version: 0
+resources:
+  license: http://dev.perl.org/licenses/
+version: v1.0.0

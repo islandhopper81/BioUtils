@@ -1,0 +1,6 @@
+do{ my $x = {
+       'BioUtils-v1.0.0' => 1,
+       'blib' => 1,
+       'BioUtils-*' => 1
+     };
+$x; }
