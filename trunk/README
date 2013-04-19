@@ -3,7 +3,7 @@ BioUtils version 1.0.1
 A library of perl modules and scripts for doing basic DNA sequence operations.
 
 Includes the following features:
-	 - store FASTA/Q sequences (including quality values)
+	- store FASTA/Q sequences (including quality values)
 	- Read/write FASTA/Q files
 	- Perform simple quality control on FASTA/Q sequences
 	- Provide summary info for a set of FASTA/Q sequences
