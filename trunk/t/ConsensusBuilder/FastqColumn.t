@@ -65,6 +65,7 @@ is( $fc->getIupacCode("CGT"), "B", "getIupacCode(CGT)" );
 
 
 # Test getConBaseAndQual() function
+# at this point $fc has 3 A's and 1 dash
 my ($topBases, $meanQual) = $fc->getConBaseAndQual();
 is( $topBases, "A", "getConBaseAndQual() -- topBases" );
 is( $meanQual, int_to_illumina_1_8(16), "getConBaseAndQual() -- meanQual" );
@@ -82,20 +83,22 @@ is( $meanQual, int_to_illumina_1_8(16), "getConBaseAndQual() -- meanQual -- tie 
 $fc->addBase("C", int_to_illumina_1_8(10));
 $fc->addBase("C", int_to_illumina_1_8(20));
 $fc->addBase("C", int_to_illumina_1_8(20));
-# Now I have a three way tie between A, T, and C.  A and C have equal mean quals which are also greater than T
+# Now I have a three way tie between A, T, and C.
+# A and C have equal mean quals which are also greater than T
 is( $fc->_resolveTie("TCA"), "AC", "_resolveTie(TCA)" );
 ($topBases, $meanQual) = $fc->getConBaseAndQual();
 is( $topBases, "M", "getConBaseAndQual() -- topBases -- three way tie with top two equal qual means" );
 is( $meanQual, int_to_illumina_1_8(16), "getConBaseAndQual() -- meanQual -- three way tie with top two equal qual means" );
 
 
-# Now I am adding in a four way tie with a dash.  I should get the dash back as the topBase.
+# Now I am adding in a four way tie with a dash.
+# I should still get AC back as the top bases
 $fc->addBase("-", int_to_illumina_1_8(0));
 $fc->addBase("-", int_to_illumina_1_8(0));
-is( $fc->_resolveTie("TCA-"), "-", "_resolveTie(TCA-)" );
+is( $fc->_resolveTie("TCA-"), "AC", "_resolveTie(TCA-)" );
 ($topBases, $meanQual) = $fc->getConBaseAndQual();
-is( $topBases, '-', "getConBaseAndQual() -- topBases -- four way tie with a dash" );
-is( $meanQual, int_to_illumina_1_8(0), "getConBaseAndQual() -- meanQual -- four way tie with a dash" );
+is( $topBases, 'M', "getConBaseAndQual() -- topBases -- four way tie with a dash" );
+is( $meanQual, int_to_illumina_1_8(16), "getConBaseAndQual() -- meanQual -- four way tie with a dash" );
 
 
 

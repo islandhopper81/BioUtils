@@ -1,6 +1,14 @@
-BioUtils version 1.0.0
+BioUtils version 1.0.1
 
-This is a library of perl modules and scripts for doing basic operations.
+A library of perl modules and scripts for doing basic DNA sequence operations.
+
+Includes the following features:
+    - store FASTA/Q sequences (including quality values)
+	- Read/write FASTA/Q files
+	- Perform simple quality control on FASTA/Q sequences
+	- Provide summary info for a set of FASTA/Q sequences
+	- Build a consensus sequence from 2 or more FASTQ sequences
+
 
 INSTALLATION
 
@@ -14,7 +22,26 @@ To install this module, run the following commands:
 
 DEPENDENCIES
 
-Some Perl packages from CPAN.
+Carp
+Chart::Graph::Gnuplot
+Class::Std::Utils
+Config::Std
+Data::Dumper
+Exception::Class
+Getopt::Long
+Exporter
+File::Temp
+File::Basename
+List::MoreUtils
+Pod::Usage
+Readonly
+Scalar::Util
+Statistics::Descriptive
+Test::Exception
+Test::More
+Test::Pod
+Test::Warn
+version
 
 
 COPYRIGHT AND LICENCE

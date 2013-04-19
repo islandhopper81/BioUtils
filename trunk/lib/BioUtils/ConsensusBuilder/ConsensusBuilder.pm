@@ -3,11 +3,11 @@ package BioUtils::ConsensusBuilder::ConsensusBuilder;
 use strict;
 use warnings;
 
-use BioUtils::ConsensusBuilder::FastqColumn 1.0.0;
-use BioUtils::ConsensusBuilder::FastqConsensus 1.0.0;
+use BioUtils::ConsensusBuilder::FastqColumn 1.0.1;
+use BioUtils::ConsensusBuilder::FastqConsensus 1.0.1;
 use BioUtils::Codec::QualityScores qw( int_to_illumina_1_8 illumina_1_8_to_int);
 use Carp qw(carp croak);
-use version; our $VERSION = qv('1.0.0');
+use version; our $VERSION = qv('1.0.1');
 use Exporter qw( import );
 our @EXPORT_OK = qw( buildFromClustalwFile buildFromSimpleAlign );
 
@@ -32,8 +32,9 @@ sub buildFromClustalwFile($$) {
     # Read in the alignments created by clustalw
     my ($alignedSeqs_href, $alignmentLen) = _parseAlignedSeqsFile($alignedSeqsFile);
 
-    # Initialize dashCount to count the number of dashes encounted at each position
-    # in each sequence
+    # Initialize dashCount to count the number of dashes encounted at each
+	# position in each sequence.  This is used to index into the original reads
+	# to retrieve quality scores when adding bases to a FastqColumn
     my %dashCount = ();
     foreach my $id ( keys %{$alignedSeqs_href} ) {
         $dashCount{$id} = 0;
@@ -49,8 +50,7 @@ sub buildFromClustalwFile($$) {
             my $base = $alignedSeqs_href->{$id}->[$i];
             if ( $base eq "-" ) {
                 $dashCount{$id}++;
-                $col->addBase(
-					$base, int_to_illumina_1_8(0));  # adding a dash
+                $col->addBase($base, int_to_illumina_1_8(0));  # adding a dash
             }
             else {
                 my $qual = $quals_href->{$id}->[$i - $dashCount{$id}];
@@ -58,8 +58,10 @@ sub buildFromClustalwFile($$) {
             }
         }
         my ($conBase, $conQual) = $col->getConBaseAndQual();
-        $conStr .= $conBase;
-        $con_quals_str .= $conQual;
+        if ( defined $conStr and defined $conBase ) {
+			$conStr .= $conBase;
+			$con_quals_str .= $conQual;
+		}
     }
     
     my $fastqConsensus = BioUtils::ConsensusBuilder::FastqConsensus->new({
@@ -201,7 +203,7 @@ from a multiple sequence alignment (MSA)
 
 =head1 VERSION
 
-This documentation refers to ConsensusBuilder version 1.0.0.
+This documentation refers to ConsensusBuilder version 1.0.1.
 
 =head1 Included Modules
 

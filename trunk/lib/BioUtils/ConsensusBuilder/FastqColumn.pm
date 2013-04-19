@@ -9,7 +9,7 @@ use warnings;
 use Class::Std::Utils;
 use Carp;
 use Readonly;
-use version; our $VERSION = qv('1.0.0');
+use version; our $VERSION = qv('1.0.1');
 use BioUtils::Codec::QualityScores qw( int_to_illumina_1_8 illumina_1_8_to_int);
 
 {
@@ -128,6 +128,9 @@ use BioUtils::Codec::QualityScores qw( int_to_illumina_1_8 illumina_1_8_to_int);
         }
         
         if ( length $topBases == 1 ) {
+            # if the topBases is only a dash then return empty
+            if ( $topBases eq "-" ) {return;}
+            
             $meanQual = $self->_getMeanQual($topBases);
         }
         else {
@@ -141,7 +144,7 @@ use BioUtils::Codec::QualityScores qw( int_to_illumina_1_8 illumina_1_8_to_int);
             }
         }
         
-        # here topBases is a single letter, but may represent more than on
+        # here topBases is a single letter, but it may be an IUPAC coded base
         return ($topBases, $meanQual);
     }
     
@@ -298,14 +301,15 @@ use BioUtils::Codec::QualityScores qw( int_to_illumina_1_8 illumina_1_8_to_int);
     sub _resolveTie($) {
         my ($self, $topBases) = @_;
         
+        # change dash back to a symbol -
+        $topBases =~ s/dash/-/;
+        
         my @topBasesArr = split(//, $topBases);
         my $topQual = '!';
         my $newTopBases;
         
-        # If there is a tie and one of the bases is a dash I assume the dash is right now
-        if ( $topBases =~ m/-/ ) { return "-"; }
-        if ( $topBases =~ m/dash/ ) { return "-"; }
         
+        # chose the base that has the highest avg quality scores
         foreach my $base (@topBasesArr) {
             my $nextQual = $self->_getMeanQual($base);
             if ( $nextQual gt $topQual ) {
@@ -336,7 +340,7 @@ also repsonsible for calling the consensus of that column.
 
 =head1 VERSION
 
-This documentation refers to FastqColumn version 1.0.0.
+This documentation refers to FastqColumn version 1.0.1.
 
 =head1 Included Modules
 
