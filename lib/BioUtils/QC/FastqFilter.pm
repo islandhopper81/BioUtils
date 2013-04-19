@@ -3,7 +3,7 @@ package BioUtils::QC::FastqFilter;
 use warnings;
 use strict;
 
-use version; our $VERSION = qv('1.0.0');
+use version; our $VERSION = qv('1.0.1');
 
 use Class::Std::Utils;
 use Scalar::Util qw(looks_like_number);
@@ -15,7 +15,7 @@ use Data::Dumper qw(Dumper);
 use Readonly;
 use Cwd;
 use File::Basename;
-use BioUtils::FastqIO 1.0.0;
+use BioUtils::FastqIO 1.0.1;
 use BioUtils::Codec::QualityScores qw(illumina_1_8_to_int);
 use MyX::Generic;
 
@@ -584,7 +584,7 @@ BioUtils::QC::FastqFilter - Filters seqs in a Fastq file based on quality
 
 =head1 VERSION
 
-This document describes BioUtils::QC::FastqFilter version 1.0.0
+This document describes BioUtils::QC::FastqFilter version 1.0.1
 
 
 =head1 SYNOPSIS
@@ -690,7 +690,7 @@ will fail if 'grep' cannot be found as a system command.
     Readonly
     Cwd
     File::Basename
-    BioUtils::FastqIO 1.0.0
+    BioUtils::FastqIO 1.0.1
     BioUtils::Codec::QualityScores qw(illumina_1_8_to_int)
     MyX::Generic
 
