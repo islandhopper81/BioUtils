@@ -1,6 +1,6 @@
 
 use BioUtils::ConsensusBuilder::FastqColumn;
-use Test::More tests => 59;
+use Test::More tests => 61;
 use BioUtils::Codec::QualityScores qw( int_to_illumina_1_8 illumina_1_8_to_int);
 
 BEGIN { use_ok( 'BioUtils::ConsensusBuilder::FastqColumn'); }
@@ -112,6 +112,17 @@ $fc->addBase(".", int_to_illumina_1_8(0));
 is( $topBase, "A", "getConBaseAndQual() -- topBases -- with a dot");
 is( $meanQual, int_to_illumina_1_8(35), "getConBaseAndQual() -- meanQual -- with a dot");
 
+
+# Test when dash is majority
+{
+    my $fc = BioUtils::ConsensusBuilder::FastqColumn->new();
+    $fc->addBase("-", int_to_illumina_1_8(0));
+    $fc->addBase("-", int_to_illumina_1_8(0));
+    $fc->addBase("A", int_to_illumina_1_8(5));
+    my ($topBase, $meanQual ) = $fc->getConBaseAndQual();
+    is( $topBase, "", "getConBaseAndQual() - dash majority" );
+    is( $meanQual, "", "getConBaseAndQual() - dash majority qual" );
+}
 
 
 # test _qual_to_prob
