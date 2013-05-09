@@ -127,9 +127,12 @@ use BioUtils::Codec::QualityScores qw( int_to_illumina_1_8 illumina_1_8_to_int);
             }
         }
         
+        # substitute dash for - so length test in next if statement will work
+        $topBases =~ s/dash/-/;
+        
         if ( length $topBases == 1 ) {
             # if the topBases is only a dash then return empty
-            if ( $topBases eq "-" ) {return;}
+            if ( $topBases =~ m/-|dash/ ) {return ("", "");}
             
             $meanQual = $self->_getMeanQual($topBases);
         }
