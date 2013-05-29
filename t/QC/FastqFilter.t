@@ -1,11 +1,12 @@
 
-use BioUtils::QC::FastqFilter 1.0.1;
-use Test::More tests => 93;
+use BioUtils::QC::FastqFilter 1.0.2;
+use Test::More tests => 123;
 use Test::Exception;
 use Test::Warn;
 use File::Temp qw/ tempfile tempdir /;
 
 sub _build_fastq_file;
+sub _build_fastq_file2;
 
 BEGIN { use_ok( 'BioUtils::QC::FastqFilter'); }
 
@@ -194,8 +195,10 @@ my $filter_g = BioUtils::QC::FastqFilter->new({
     # empty fastq file
     my ($fh_2, $filename_2) = tempfile();
     close($fh_2);
-    warnings_exist {$filter = BioUtils::QC::FastqFilter->new({fastq_file => $filename_2,
-                                                output_dir => $output_dir})}
+    warnings_exist {$filter = BioUtils::QC::FastqFilter->new({
+                                                fastq_file => $filename_2,
+                                                output_dir => $output_dir
+                                                })}
         [qr/Empty fastq_file/,],
         "new empty fastq file - warnings";
     
@@ -392,12 +395,139 @@ my $filter_g = BioUtils::QC::FastqFilter->new({
            "filter - diagnostics file created" );
 }
 
+# test with pairs (eg given a second fastq file to filter based on paired seqs)
+{
+    # build a second fastq file
+    my ($fh2, $file2name) = tempfile();
+    
+    # get the output files prefixes
+    my $fwd_prefix = BioUtils::QC::FastqFilter::_get_file_prefix($filename);
+    
+    my $filter_l; # a FastqFilter object for this block
+    
+    # check when a file is given but is empty
+    warnings_exist {my $filter_l = BioUtils::QC::FastqFilter->new({
+                                    fastq_file => $filename,
+                                    fastq_file2 => file2name,
+                                    output_dir => $output_dir})}
+        [qr/Empty fastq_file2/,],
+        "new empty fastq file2 - warnings";
+    
+    # populate the new second fastq file
+    # NOTE: this method will create a file with a mismatch number of seqs.
+    _build_fastq_file3($fh2);
+    
+    # now it should be created without warnings
+    # Here I just call set_fastq_file2 directly
+    lives_ok(sub{$filter_l = BioUtils::QC::FastqFilter->new({
+                    fastq_file => $filename,
+                    fastq_file2 => $file2name,
+                    output_dir => $output_dir,
+                    min_len => 16,
+                    min_avg_qual => 20,
+                    min_base_qual => 10,
+                    allow_gaps => 0,
+                    allow_ambig_bases => 0,
+                    verbose => 1,
+                    })},
+        "lives FastqFilter->new()");
+    
+    # test the mismatch number of sequences crash with fewer rev seqs
+    throws_ok( sub{$filter_l->filter_pairs()},
+              qr/Mismatched Pairs: fewer rev seqs/,
+              "throws - Mismatched Pairs: fewer rev seqs");
+    
+    # test the mismatch number of sequences crash with fewer fwd seqs
+    throws_ok( sub{
+        ($fh2, $file2name) = tempfile();
+        _build_fastq_file4($fh2);
+        $filter_l->set_fastq_file2($file2name);
+        $filter_l->filter_pairs()},
+              qr/Mismatched Pairs: fewer fwd seqs/,
+              "throws - Mismatched Pairs: fewer fwd seqs");
+    
+    # test the mismatch of names warnings
+    warnings_exist{my ($fh2, $file2name) = tempfile();
+        _build_fastq_file5($fh2);
+        $filter_l->set_fastq_file2($file2name);
+        $filter_l->filter_pairs()}
+        [qr/Fwd and Rev IDs do NOT match:/],
+        "Warn - Fwd and Rev IDs do NOT match";
+    
+    # for clearity and testing I create a new output dir
+    my $output_dir = tempdir();
+    $filter_l->set_output_dir($output_dir);
+    
+    lives_ok( sub{
+                ($fh2, $file2name) = tempfile();
+                _build_fastq_file2($fh2);
+                $filter_l->set_fastq_file2($file2name);
+                $filter_l->filter_pairs()},
+             "lives_ok - filter_pairs");
+    
+    $rev_prefix = BioUtils::QC::FastqFilter::_get_file_prefix($file2name);
+
+    cmp_ok( length `grep seq1 $output_dir/$fwd_prefix\_fwd_unfiltered.fastq`, '>', 0,
+       "filter(min_len) - seq1 is in fwd unfiltered file" );
+    cmp_ok( length `grep seq1 $output_dir/$fwd_prefix\_fwd_filtered.fastq`, '==', 0,
+       "filter(min_len) - seq1 NOT in fwd filtered file" );
+    cmp_ok( length `grep seq1 $output_dir/$rev_prefix\_rev_unfiltered.fastq`, '>', 0,
+       "filter(min_len) - seq1 is in rev unfiltered file" );
+    cmp_ok( length `grep seq1 $output_dir/$rev_prefix\_rev_filtered.fastq`, '==', 0,
+       "filter(min_len) - seq1 NOT in rev filtered file" );
+    
+    cmp_ok( length `grep seq2 $output_dir/$fwd_prefix\_fwd_filtered.fastq`, '>', 0,
+       "filter(min_len) - seq2 is in fwd filtered file" );
+    cmp_ok( length `grep seq2 $output_dir/$fwd_prefix\_fwd_unfiltered.fastq`, '==', 0,
+       "filter(min_len) - seq2 NOT in fwd unfiltered file" );
+    cmp_ok( length `grep seq2 $output_dir/$rev_prefix\_rev_filtered.fastq`, '>', 0,
+       "filter(min_len) - seq2 is in rev filtered file" );
+    cmp_ok( length `grep seq2 $output_dir/$rev_prefix\_rev_unfiltered.fastq`, '==', 0,
+       "filter(min_len) - seq2 NOT in rev unfiltered file" );
+    
+    cmp_ok( length `grep seq3 $output_dir/$fwd_prefix\_fwd_filtered.fastq`, '>', 0,
+       "filter(min_len) - seq3 is in fwd filtered file" );
+    cmp_ok( length `grep seq3 $output_dir/$fwd_prefix\_fwd_unfiltered.fastq`, '==', 0,
+       "filter(min_len) - seq3 NOT in fwd unfiltered file" );
+    cmp_ok( length `grep seq3 $output_dir/$rev_prefix\_rev_filtered.fastq`, '>', 0,
+       "filter(min_len) - seq3 is in rev filtered file" );
+    cmp_ok( length `grep seq3 $output_dir/$rev_prefix\_rev_unfiltered.fastq`, '==', 0,
+       "filter(min_len) - seq3 NOT in rev unfiltered file" );
+    
+    cmp_ok( length `grep seq4 $output_dir/$fwd_prefix\_fwd_filtered.fastq`, '>', 0,
+       "filter(min_len) - seq4 is in fwd filtered file" );
+    cmp_ok( length `grep seq4 $output_dir/$fwd_prefix\_fwd_unfiltered.fastq`, '==', 0,
+       "filter(min_len) - seq4 NOT in fwd unfiltered file" );
+    cmp_ok( length `grep seq4 $output_dir/$rev_prefix\_rev_filtered.fastq`, '>', 0,
+       "filter(min_len) - seq4 is in rev filtered file" );
+    cmp_ok( length `grep seq4 $output_dir/$rev_prefix\_rev_unfiltered.fastq`, '==', 0,
+       "filter(min_len) - seq4 NOT in rev unfiltered file" );
+    
+    cmp_ok( length `grep seq5 $output_dir/$fwd_prefix\_fwd_filtered.fastq`, '>', 0,
+       "filter(min_len) - seq5 is in fwd filtered file" );
+    cmp_ok( length `grep seq5 $output_dir/$fwd_prefix\_fwd_unfiltered.fastq`, '==', 0,
+       "filter(min_len) - seq5 NOT in fwd unfiltered file" );
+    cmp_ok( length `grep seq5 $output_dir/$rev_prefix\_rev_filtered.fastq`, '>', 0,
+       "filter(min_len) - seq5 is in rev filtered file" );
+    cmp_ok( length `grep seq5 $output_dir/$rev_prefix\_rev_unfiltered.fastq`, '==', 0,
+       "filter(min_len) - seq5 NOT in rev unfiltered file" );
+    
+    cmp_ok( length `grep seq6 $output_dir/$fwd_prefix\_fwd_filtered.fastq`, '>', 0,
+       "filter(min_len) - seq6 is in fwd filtered file" );
+    cmp_ok( length `grep seq6 $output_dir/$fwd_prefix\_fwd_unfiltered.fastq`, '==', 0,
+       "filter(min_len) - seq6 NOT in fwd unfiltered file" );
+    cmp_ok( length `grep seq6 $output_dir/$rev_prefix\_rev_filtered.fastq`, '>', 0,
+       "filter(min_len) - seq6 is in rev filtered file" );
+    cmp_ok( length `grep seq6 $output_dir/$rev_prefix\_rev_unfiltered.fastq`, '==', 0,
+       "filter(min_len) - seq6 NOT in rev unfiltered file" );
+}
+
 
 
 ### Subroutines ###
 
 sub _build_fastq_file {
-    my ($fh) = @_;
+    my ($fh_l) = @_;
     
     my $fastq_str = '@seq1' . "\n" . 
                     "AAAATTTT\n" .
@@ -425,7 +555,147 @@ sub _build_fastq_file {
                     "4444444#\n";
                     
     
-    print $fh $fastq_str;
+    print $fh_l $fastq_str;
     
-    close($fh);
+    close($fh_l);
+}
+
+sub _build_fastq_file2 {
+    my ($fh_l) = @_;
+    
+    my $fastq_str = '@seq1' . "\n" . 
+                    "AAAATTTT\n" .
+                    "+seq1\n" .
+                    "IIIIIIII\n" .
+                    '@seq2' . "\n" .
+                    "AAAATTT\n" .
+                    "+seq2\n" .
+                    "IIIIIII\n" .
+                    '@seq3' . "\n" . 
+                    "AAAATTTT\n" .
+                    "+seq3\n" .
+                    "44444444\n" .
+                    '@seq4' . "\n" . 
+                    "AAAATTTT\n" .
+                    "+seq4\n" .
+                    "4444444#\n" .
+                    '@seq5' . "\n" . 
+                    "AAA-TTTT\n" .
+                    "+seq5\n" .
+                    "4444444#\n" .
+                    '@seq6' . "\n" . 
+                    "AAANTTTT\n" .
+                    "+seq6\n" .
+                    "4444444#\n";
+                    
+    
+    print $fh_l $fastq_str;
+    
+    close($fh_l);
+}
+
+sub _build_fastq_file3 {
+    my ($fh_l) = @_;
+    
+    # This data has a mismatching number of sequences (fewer rev seqs)
+    
+    my $fastq_str = '@seq1' . "\n" . 
+                    "AAAATTTT\n" .
+                    "+seq1\n" .
+                    "IIIIIIII\n" .
+                    '@seq2' . "\n" .
+                    "AAAATTT\n" .
+                    "+seq2\n" .
+                    "IIIIIII\n" .
+                    '@seq3' . "\n" . 
+                    "AAAATTTT\n" .
+                    "+seq3\n" .
+                    "44444444\n" .
+                    '@seq4' . "\n" . 
+                    "AAAATTTT\n" .
+                    "+seq4\n" .
+                    "4444444#\n" .
+                    '@seq5' . "\n" . 
+                    "AAA-TTTT\n" .
+                    "+seq5\n" .
+                    "4444444#\n";
+                    
+    
+    print $fh_l $fastq_str;
+    
+    close($fh_l);
+}
+
+sub _build_fastq_file4 {
+    my ($fh_l) = @_;
+    
+    my $fastq_str = '@seq1' . "\n" . 
+                    "AAAATTTT\n" .
+                    "+seq1\n" .
+                    "IIIIIIII\n" .
+                    '@seq2' . "\n" .
+                    "AAAATTT\n" .
+                    "+seq2\n" .
+                    "IIIIIII\n" .
+                    '@seq3' . "\n" . 
+                    "AAAATTTT\n" .
+                    "+seq3\n" .
+                    "44444444\n" .
+                    '@seq4' . "\n" . 
+                    "AAAATTTT\n" .
+                    "+seq4\n" .
+                    "4444444#\n" .
+                    '@seq5' . "\n" . 
+                    "AAA-TTTT\n" .
+                    "+seq5\n" .
+                    "4444444#\n" .
+                    '@seq6' . "\n" . 
+                    "AAANTTTT\n" .
+                    "+seq6\n" .
+                    "4444444#\n" . 
+                    '@seq7' . "\n" . 
+                    "AAANTTTT\n" .
+                    "+seq7\n" .
+                    "4444444#\n";
+                    
+    
+    print $fh_l $fastq_str;
+    
+    close($fh_l);
+}
+
+sub _build_fastq_file5 {
+    my ($fh_l) = @_;
+    
+    # this data has mimatching sequence names.  It should throw a warning.
+    
+    my $fastq_str = '@seq1' . "\n" . 
+                    "AAAATTTT\n" .
+                    "+seq1\n" .
+                    "IIIIIIII\n" .
+                    '@seq2' . "\n" .
+                    "AAAATTT\n" .
+                    "+seq2\n" .
+                    "IIIIIII\n" .
+                    '@seq3' . "\n" . 
+                    "AAAATTTT\n" .
+                    "+seq3\n" .
+                    "44444444\n" .
+                    '@seq4' . "\n" . 
+                    "AAAATTTT\n" .
+                    "+seq4\n" .
+                    "4444444#\n" .
+                    '@seq5' . "\n" . 
+                    "AAA-TTTT\n" .
+                    "+seq5\n" .
+                    "4444444#\n" .
+                    '@seq7' . "\n" . 
+                    "AAANTTTT\n" .
+                    "+seq7\n" .
+                    "4444444#\n";
+                    
+    
+    print $fh_l $fastq_str;
+    
+    close($fh_l);
 }
