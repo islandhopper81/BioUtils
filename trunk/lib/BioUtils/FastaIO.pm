@@ -7,10 +7,10 @@ use Class::Std::Utils;
 use List::MoreUtils qw(any);
 use Readonly;
 use Carp qw(croak);
-use MyX::Generic 1.0.1;
-use BioUtils::FastaSeq 1.0.1;
+use MyX::Generic 1.0.2;
+use BioUtils::FastaSeq 1.0.2;
 
-use version; our $VERSION = qv('1.0.1');
+use version; our $VERSION = qv('1.0.2');
 
 
 {
@@ -164,7 +164,7 @@ BioUtils::FastaSeq objects
 
 =head1 VERSION
 
-This document describes BioUtils::FastaIO version 1.0.1
+This document describes BioUtils::FastaIO version 1.0.2
 
 
 =head1 SYNOPSIS

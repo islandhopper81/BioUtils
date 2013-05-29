@@ -3,11 +3,11 @@ package BioUtils::ConsensusBuilder::ConsensusBuilder;
 use strict;
 use warnings;
 
-use BioUtils::ConsensusBuilder::FastqColumn 1.0.1;
-use BioUtils::ConsensusBuilder::FastqConsensus 1.0.1;
+use BioUtils::ConsensusBuilder::FastqColumn 1.0.2;
+use BioUtils::ConsensusBuilder::FastqConsensus 1.0.2;
 use BioUtils::Codec::QualityScores qw( int_to_illumina_1_8 illumina_1_8_to_int);
 use Carp qw(carp croak);
-use version; our $VERSION = qv('1.0.1');
+use version; our $VERSION = qv('1.0.2');
 use Exporter qw( import );
 our @EXPORT_OK = qw( buildFromClustalwFile buildFromSimpleAlign );
 
@@ -203,7 +203,7 @@ from a multiple sequence alignment (MSA)
 
 =head1 VERSION
 
-This documentation refers to ConsensusBuilder version 1.0.1.
+This documentation refers to ConsensusBuilder version 1.0.2.
 
 =head1 Included Modules
 

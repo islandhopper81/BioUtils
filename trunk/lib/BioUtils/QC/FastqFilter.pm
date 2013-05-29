@@ -3,7 +3,7 @@ package BioUtils::QC::FastqFilter;
 use warnings;
 use strict;
 
-use version; our $VERSION = qv('1.0.1');
+use version; our $VERSION = qv('1.0.2');
 
 use Class::Std::Utils;
 use Scalar::Util qw(looks_like_number);
@@ -15,7 +15,7 @@ use Data::Dumper qw(Dumper);
 use Readonly;
 use Cwd;
 use File::Basename;
-use BioUtils::FastqIO 1.0.1;
+use BioUtils::FastqIO 1.0.2;
 use BioUtils::Codec::QualityScores qw(illumina_1_8_to_int);
 use MyX::Generic;
 
@@ -23,6 +23,7 @@ use MyX::Generic;
 {
     Readonly my $NEW_USAGE => q{ new( {fastq_file => ,
             output_dir => ,
+            [fastq_file2 => ,]
             [min_len => ],
             [min_avg_qual => ],
             [min_base_qual => ],
@@ -34,6 +35,7 @@ use MyX::Generic;
     
     # Attributes #
     my %fastq_file_of;
+    my %fastq_file2_of;
     my %output_dir_of;
     my %min_len_of;
     my %min_avg_qual_of;
@@ -44,6 +46,7 @@ use MyX::Generic;
 
     # Setters #
     sub set_fastq_file;
+    sub set_fastq_file2;
     sub set_output_dir;
     sub set_min_len;
     sub set_min_avg_qual;
@@ -54,6 +57,7 @@ use MyX::Generic;
     
     # Getters #
     sub get_fastq_file;
+    sub get_fastq_file2;
     sub get_output_dir;
     sub get_min_len;
     sub get_min_avg_qual;
@@ -64,6 +68,10 @@ use MyX::Generic;
     
     # Others #
     sub filter;
+    sub filter_pairs;
+    sub _make_io_objs;
+    sub _make_pairs_io_objs;
+    sub _test_seq;
     sub _init;
     sub _too_short;
     sub _below_avg_qual;
@@ -99,15 +107,150 @@ use MyX::Generic;
         
         my $out_dir = $self->get_output_dir();
         my $input_file = $self->get_fastq_file();
-        my $allow_gaps = $self->get_allow_gaps();
-        my $allow_ambig_bases = $self->get_allow_ambig_bases();
         my $verbose = $self->get_verbose();
-        
-        # Get the input file prefix so I can build the output file(s).
-        my $file_prefix = _get_file_prefix($input_file);
+        my @diag_table = (); # a table for reasons for each sequences filtering
+        my $file_prefix = _get_file_prefix($input_file); # for making output files
     
+        # Build the FASTQIO objects
+        my ($in, $out, $filtered_out) = _make_io_objs($input_file,
+                                                      $out_dir,
+                                                      $file_prefix,
+                                                      $verbose); 
         
-        # Build the FASTQ file in/out objects
+        # Read in the sequences from $input_file
+        # AND run each filter test
+        SEQ: while ( my $fastq_seq = $in->get_next_seq() ) {
+            
+            my @diagnostics = ();
+            my $seq_id = $fastq_seq->get_id();
+            my $seq_str = $fastq_seq->get_seq();
+            my $quals_str = $fastq_seq->get_quals_str();
+            
+            # run tests
+            my $filter_flag = $self->_test_seq(\@diagnostics,
+                                               $seq_id,
+                                               $seq_str,
+                                               $quals_str,
+                                               $verbose);
+            
+            
+            ### All the tests are done.  Now do some output.
+            
+            # if the sequence was flagged as filtered record the diagnostic info
+            if ( $filter_flag ) {  
+                push @diag_table, \@diagnostics;
+            }
+            
+            # if the sequence is filtered out and we are in verbose mode print
+            # the sequence.  Else just print the unfiltered seqs.  Unfiltered
+            # means seqs that passed the tests.
+            if ( $filter_flag and $verbose ) {
+                $filtered_out->write_seq($fastq_seq);
+            }
+            else {
+                $out->write_seq($fastq_seq);
+            }
+        }
+        
+        # Some clean up
+        if ( $verbose ) {
+            _print_diagnostics(\@diag_table, $out_dir, $file_prefix);
+        }
+        
+        return \@diag_table;
+    }
+    
+    sub filter_pairs {
+        my ($self) = @_;
+        
+        my $out_dir = $self->get_output_dir();
+        my $fwd_file = $self->get_fastq_file();
+        my $rev_file = $self->get_fastq_file2();
+        my $verbose = $self->get_verbose();
+        my @diag_table = (); # a table for reasons for each sequences filtering
+        my $fwd_prefix = _get_file_prefix($fwd_file); # for making output files
+        my $rev_prefix = _get_file_prefix($rev_file); # for making output files
+        
+        # Build the FASTQIO objects
+        my ($fwd_in, $fwd_out, $fwd_filtered_out,
+            $rev_in, $rev_out, $rev_filtered_out) = _make_pairs_io_objs(
+                                                        $fwd_file,
+                                                        $rev_file,
+                                                        $out_dir,
+                                                        $fwd_prefix,
+                                                        $rev_prefix,
+                                                        $verbose);
+        
+        # Read in the sequences and run each filter test
+        SEQ: while ( my $fwd_seq = $fwd_in->get_next_seq() ) {
+            # check that the rev seq is defined
+            my $rev_seq = $rev_in->get_next_seq();
+            if ( $rev_seq == 0) {
+                # when 0 is returned by FastqIO get_next_seq() was called when
+                # no more sequences remain.
+                croak ("Mismatched Pairs: fewer rev seqs");
+            }
+            
+            # check that the fwd and rev ids match
+            if ( $fwd_seq->get_id() ne $rev_seq->get_id() ) {
+                carp("Fwd and Rev IDs do NOT match:\n" .
+                     "\tFWD: " . $fwd_seq->get_id() . "\n" .
+                     "\tREV: " . $rev_seq->get_id() . "\n");
+            }
+            
+            my @diagnostics = ();
+            my $seq_id = $fwd_seq->get_id() . "-" . $rev_seq->get_id();
+            my $seq_str = $fwd_seq->get_seq() . $rev_seq->get_seq();
+            my $quals_str = $fwd_seq->get_quals_str() .
+                            $rev_seq->get_quals_str();
+            
+            ### run tests ###
+            my $filter_flag = $self->_test_seq(\@diagnostics,
+                                               $seq_id,
+                                               $seq_str,
+                                               $quals_str,
+                                               $verbose);
+            
+            ### Now output ###
+            # if the sequence was flagged as filtered record the diagnostic info
+            if ( $filter_flag) {
+                push @diag_table, \@diagnostics;
+            }
+            
+            # if the sequence is filtered out and we are in verbose mode print
+            # the sequence.  Else just print the unfiltered seqs.  Unfiltered
+            # means seqs that passed the tests.
+            if ( $filter_flag and $verbose ) {
+                $fwd_filtered_out->write_seq($fwd_seq);
+                $rev_filtered_out->write_seq($rev_seq);
+            }
+            else {
+                $fwd_out->write_seq($fwd_seq);
+                $rev_out->write_seq($rev_seq);
+            }
+            
+        }
+        
+        # check to see that all the rev seqs were used
+        if ( $rev_in->get_next_seq() != 0 ) {
+            # when 0 is returned by FastqIO get_next_seq() was called when
+            # no more sequences remain.
+            croak("Mismatched Pairs: fewer fwd seqs");
+        }
+        
+        ### Some cleanup ###
+        if ( $verbose ) {
+            # NOTE: the diagnostics output file is made based on the fwd
+            # file prefix
+            _print_diagnostics(\@diag_table, $out_dir, $fwd_prefix);
+        }
+        
+        return \@diag_table;
+    }
+    
+    sub _make_io_objs {
+        my ($input_file, $out_dir, $file_prefix, $verbose) = @_;
+        
         my ($in, $out, $filtered_out);
         
         eval {
@@ -140,23 +283,77 @@ use MyX::Generic;
             print $@;
         }
         
-        # a table of why each sequence is filterted out (i.e. diagnostics)
-        my @diag_table = ();
+        return ($in, $out, $filtered_out);
+    }
+    
+    sub _make_pairs_io_objs {
+        my ($fwd_file, $rev_file, $out_dir,
+            $fwd_prefix, $rev_prefix, $verbose) = @_;
         
-        # Read in the sequences from $input_file
-        # AND run each filter test
-        SEQ: while ( my $fastq_seq = $in->get_next_seq() ) {
-            
-            # A boolean to keep track if the sequence needs to be filtered out
+        my ($fwd_in, $fwd_out, $fwd_filtered_out,
+            $rev_in, $rev_out, $rev_filtered_out);
+        
+        eval {
+            $fwd_in = BioUtils::FastqIO->new( {
+                        stream_type => '<',
+                        file => $fwd_file
+                    });
+            $fwd_out = BioUtils::FastqIO->new( {
+                        stream_type => '>',
+                        file => $out_dir . "/" .
+                                $fwd_prefix .
+                                '_fwd_unfiltered.fastq'
+                    });
+            if ( $verbose ) {
+                $fwd_filtered_out = BioUtils::FastqIO->new( {
+                                    stream_type => '>',
+                                    file => $out_dir . "/" .
+                                            $fwd_prefix .
+                                            '_fwd_filtered.fastq'
+                                });
+            }
+            $rev_in = BioUtils::FastqIO->new( {
+                        stream_type => '<',
+                        file => $rev_file
+                    });
+            $rev_out = BioUtils::FastqIO->new( {
+                        stream_type => '>',
+                        file => $out_dir . "/" .
+                                $rev_prefix .
+                                '_rev_unfiltered.fastq'
+                    });
+            if ( $verbose ) {
+                $rev_filtered_out = BioUtils::FastqIO->new( {
+                                    stream_type => '>',
+                                    file => $out_dir . "/" .
+                                            $rev_prefix .
+                                            '_rev_filtered.fastq'
+                                });
+            }
+        };
+        if ( my $e = MyX::Generic::Undef::Param->caught() ) {
+            croak($e->message() . "\n" .
+                  $e->trace() . "\n" .
+                  "USAGE: " . $e->usage() . "\n"
+                  );
+        }
+        elsif ( $@ ) {
+            print $@;
+        }
+        
+        return ($fwd_in, $fwd_out, $fwd_filtered_out,
+                $rev_in, $rev_out, $rev_filtered_out);
+    }
+    
+    sub _test_seq {
+        my ($self, $diag_aref, $id, $seq_str, $quals_str, $verbose) = @_;
+        
+        # A boolean to keep track if the sequence needs to be filtered out
             my $filter_flag = 0;
-            
+
             # A data structure for storing this (a single) sequence's diagnostics
             my @diagnostics = ();
-            push @diagnostics, $fastq_seq->get_id();
-            
-            # save the sequence and quals for testing
-            my $seq = $fastq_seq->get_seq();
-            my $quals_str = $fastq_seq->get_quals_str();
+            push @$diag_aref, $id;
             
             # Decode the quals into ints and store in an aref
             my $int_quals_aref = illumina_1_8_to_int($quals_str);
@@ -167,27 +364,27 @@ use MyX::Generic;
             $stat->add_data(@{$int_quals_aref});
             
             # Test length
-            if ( _too_short($self->get_min_len(), $seq) ) {
-                next SEQ if ( ! $verbose );
+            if ( _too_short($self->get_min_len(), $seq_str) ) {
+                return $filter_flag if ( ! $verbose );
                 
                 # verbose operations
-                push @diagnostics, 1;
+                push @$diag_aref, 1;
                 $filter_flag = 1;
             }
             else {
-                push @diagnostics, 0;
+                push @$diag_aref, 0;
             }
             
             # Test minimum average quality over whole read
             if ( _below_avg_qual($self->get_min_avg_qual(), $stat->mean()) ) {
-                next SEQ if ( ! $verbose );
+                return 1 if ( ! $verbose );
                 
                 # verbose operations
-                push @diagnostics, 1;
+                push @$diag_aref, 1;
                 $filter_flag = 1;
             }
             else {
-                push @diagnostics, 0;
+                push @$diag_aref, 0;
             }
             
             # Test minimum base quality
@@ -195,71 +392,49 @@ use MyX::Generic;
                                       $self->get_min_base_qual(),
                                       $stat->min())
                 ) {
-                next SEQ if ( ! $verbose );
+                return 1 if ( ! $verbose );
                 
                 # verbose operations
-                push @diagnostics, 1;
+                push @$diag_aref, 1;
                 $filter_flag = 1;
             }
             else {
-                push @diagnostics, 0;
+                push @$diag_aref, 0;
             }
             
             # Test that there are no gaps
-            if ( _has_gaps($seq) and ! $allow_gaps ) {
-                next SEQ if ( ! $verbose );
+            if ( _has_gaps($seq_str) and ! $self->get_allow_gaps() ) {
+                return 1 if ( ! $verbose );
                 
                 # verbose operations
-                push @diagnostics, 1;
+                push @$diag_aref, 1;
                 $filter_flag = 1;
             }
             else {
-                push @diagnostics, 0;
+                push @$diag_aref, 0;
             }
             
             # Test that there are no ambiguous bases
-            if ( _has_ambiguous_bases($seq) and ! $allow_ambig_bases ) {
-                next SEQ if ( ! $verbose );
+            if ( _has_ambiguous_bases($seq_str) and
+                ! $self->get_allow_ambig_bases ) {
+                return 1 if ( ! $verbose );
                 
                 # verbose operations
-                push @diagnostics, 1;
+                push @$diag_aref, 1;
                 $filter_flag = 1;
             }
             else {
-                push @diagnostics, 0;
+                push @$diag_aref, 0;
             }
             
-            
-            ### All the tests are done.  Now do some output.
-            
-            # if the sequence was flagged as filtered record the diagnostic info
-            if ( $filter_flag ) {  
-                push @diag_table, \@diagnostics;
-            }
-            
-            # if the sequence is filtered out and we are in verbose mode print
-            # the sequence.  Else just print the unfiltered seqs.  Unfiltered
-            # means seqs that passed the tests.
-            if ( $filter_flag and $verbose ) {
-                $filtered_out->write_seq($fastq_seq);
-            }
-            else {
-                $out->write_seq($fastq_seq);
-            }
-        }
-        
-        # Some clean up
-        if ( $verbose ) {
-            _print_diagnostics(\@diag_table, $out_dir, $file_prefix);
-        }
-        
-        return \@diag_table;
+            return $filter_flag;
     }
     
     sub _init {
         my ($self, $arg_href) = @_;
         
         $self->set_fastq_file($arg_href->{fastq_file});
+        $self->set_fastq_file2($arg_href->{fastq_file2});
         $self->set_output_dir($arg_href->{output_dir});
         $self->set_min_len($arg_href->{min_len});
         $self->set_min_avg_qual($arg_href->{min_avg_qual});
@@ -387,6 +562,17 @@ use MyX::Generic;
             carp("Empty fastq_file: $file");
         }
         $fastq_file_of{ident $self} = $file;
+        
+        return 1;
+    }
+    
+    sub set_fastq_file2 {
+        my ($self, $file) = @_;
+        
+        if ( defined $file and ! -s $file ) {
+            carp("Empty fastq_file2: $file");
+        }
+        $fastq_file2_of{ident $self} = $file;
         
         return 1;
     }
@@ -519,6 +705,11 @@ use MyX::Generic;
         return $fastq_file_of{ident $self};
     }
     
+    sub get_fastq_file2 {
+        my ($self) = @_;
+        return $fastq_file2_of{ident $self};
+    }
+    
     sub get_output_dir {
         my ($self) = @_;
         return $output_dir_of{ident $self};
@@ -584,7 +775,7 @@ BioUtils::QC::FastqFilter - Filters seqs in a Fastq file based on quality
 
 =head1 VERSION
 
-This document describes BioUtils::QC::FastqFilter version 1.0.1
+This document describes BioUtils::QC::FastqFilter version 1.0.2
 
 
 =head1 SYNOPSIS
@@ -594,6 +785,7 @@ This document describes BioUtils::QC::FastqFilter version 1.0.1
     my $filter = BioUtils::QC::FastqFilter->new({
                     fastq_file => $fastq_file,
                     output_dir => $output_dir,
+                    [fastq_file2] => $rev_file,
                     [min_len => $min_len],
                     [min_avg_qual => $min_avg_qual],
                     [min_base_qual => $min_base_qual],
@@ -611,13 +803,25 @@ BioUtils::QC::FastqFilter is a module that can be used to filter sequences in a
 Fastq file.  These sequences can be filtered based on their length, average
 quality score, lowest base quality score, gaps, and ambiguous bases.
 
+Sequences can also be filtered by pairs.  For example, if two files are provided
+via the attributes fastq_file and fastq_file2, FastqFilter will assume these
+files are matching pairs.  For implementation simplicity sequences and quality
+values from these pairs are concatenated together.  Test are done on these
+concatenated sequences and are NOT done in the individual FWD and REV reads.
+For example, if the user provides a pair of fastq files and wants to filter out
+any pair that has more than 150bp, the pairs are concatenated and subsiquently
+checked to ensure the concatenated sequence is less than 150bp.  Currently it is
+not possible to apply filters baesed on individual FWD or REV reads.
+
 
 =head1 INTERFACE 
 
     filter
+    filter_pairs
 
     # Setters #
     set_fastq_file
+    set_fastq_file2
     set_output_dir
     set_min_len
     set_min_avg_qual
@@ -628,6 +832,7 @@ quality score, lowest base quality score, gaps, and ambiguous bases.
 
     # Getters #
     get_fastq_file
+    get_fastq_file2
     get_output_dir
     get_min_len
     get_min_avg_qual
@@ -637,6 +842,9 @@ quality score, lowest base quality score, gaps, and ambiguous bases.
     get_verbose
 
     # Private #
+    _make_io_objs
+    _make_pairs_io_objs
+    _test_seq
     _init
     _too_short
     _below_avg_qual
@@ -658,15 +866,74 @@ quality score, lowest base quality score, gaps, and ambiguous bases.
 
 =over
 
-=item C<< Error message here, perhaps with %s placeholders >>
+=item C<< MyX::Generic::Undef::Param >>
 
-[Description of error here]
+Thrown when trying to access undefined paramters
 
-=item C<< Another error message here >>
+=item C<< Mismatch Pairs: fewer rev seqs >>
 
-[Description of error here]
+Croaks when filter_pairs is called and there are more FWD seqs than REV seqs
 
-[Et cetera, et cetera]
+=item C<< Mismatch Pairs: fewer fwd seqs >>
+
+Croaks when filter_pairs is called and there are more REV seqs than FWD seqs
+
+=item C<< Fwd and Rev IDs do NOT match >>
+
+Carps when two FWD and REV read IDs do not match.  You can ignore these warnings
+if you know the reads match
+
+=item C<< Undefined fastq_file >>
+
+Croaks when setting an undefined fastq file
+
+=item C<< Empty fastq_file >>
+
+Carps when setting an empty fastq file
+
+=item C<< Undefined fastq_file2 >>
+
+Croaks when setting an undefined fastq file for the matching pairs file
+
+=item C<< Empty fastq_file2 >>
+
+Carps when setting an empty fastq file for the matching pairs file
+
+=item C<< Undefined output dir >>
+
+Croaks when setting an undefined output directory
+
+=item C<< Outut dir doesn't exist >>
+
+Croaks when the output dir doesn't exist
+
+=item C<< min_len must be > 0 >>
+
+Croaks when setting min_len to less than 0
+
+=item C<< min_avg_qual must be > 0 >>
+
+Croaks when setting min_avg_qual to less than 0
+
+=item C<< min_base_qual must be > 0 >>
+
+Croaks when setting min_base_qual to less than 0
+
+=item C<< allow_gaps must be 0 or 1 >>
+
+Croaks when setting allow_gaps to something other than 0 or 1
+
+=item C<< allow_ambig_bases must be 0 or 1 >>
+
+Croaks when setting allow_ambig_bases to something other than 0 or 1
+
+=item C<< verbose must be 0 or 1 >>
+
+Croaks when setting verbose to something other than 0 or 1
+
+=item C<< Bad Yes/No value >>
+
+Croaks when transforming a Yes or No parameter into a boolean value
 
 =back
 
@@ -690,7 +957,7 @@ will fail if 'grep' cannot be found as a system command.
     Readonly
     Cwd
     File::Basename
-    BioUtils::FastqIO 1.0.1
+    BioUtils::FastqIO 1.0.2
     BioUtils::Codec::QualityScores qw(illumina_1_8_to_int)
     MyX::Generic
 
@@ -707,6 +974,7 @@ will fail if 'grep' cannot be found as a system command.
 	Title: new
 	Usage: my $filter = BioUtils::QC::FastqFilter->new({
                             fastq_file => $fastq_file,
+                            fastq_file2 => $fastq_file2,
                             output_dir => $output_dir,
                             [min_len => $min_len],
                             [min_avg_qual => $min_avg_qual],
@@ -718,6 +986,7 @@ will fail if 'grep' cannot be found as a system command.
 	Function: Creates a new BioUtils::QC::FastqFilter object
 	Returns: BioUtils::QC::FastqFilter
 	Args: -fastq_file => full file path to fastq file with seqs to filter
+          -fastq_file2 => full file path to fastq file with matching pairs
           -output_dir => full path to output directory
           -min_len => min length of seqs to keep
           -min_avg_qual => min average quality value of seqs to keep
@@ -725,7 +994,7 @@ will fail if 'grep' cannot be found as a system command.
           -allow_gaps => keep seqs with gaps (0 == NO, 1 == YES)
           -allow_ambig_bases => keep seqs with ambiguous bases
                                 (0 == NO, 1 == YES)
-	Throws: NA
+	Throws: See _init() and setter methods
 	Comments: Calls _init()
 	See Also: _init()
     
@@ -739,6 +1008,90 @@ will fail if 'grep' cannot be found as a system command.
 	Args: NA
 	Throws: MyX::Generic::Undef::Param
 	Comments: The returned Array ref is mostly used for testing purposes
+	See Also: NA
+    
+=head2 filter_pairs
+
+	Title: filter_pairs
+	Usage: my $filter->filter_pairs();
+	Function: Filters seqs in the objects fastq file.  Prints resutls to
+              the objects output directory.  Filtering is done based on
+              concatenating the pairs sequences and quality scores.  However,
+              seperate files are output for FWD and REV reads.
+	Returns: Array Ref
+	Args: NA
+	Throws: MyX::Generic::Undef::Param
+            craok(Mismatched Pairs: fewer rev seqs)
+            croak(Mismatched Pairs: fewer fwd seqs)
+            carp(Fwd and Rev IDs do NOT match)
+	Comments: The returned Array ref is mostly used for testing purposes
+	See Also: NA
+    
+=head2 _make_io_objs
+
+	Title: _make_io_objs
+	Usage: my ($in, $out, $filtered) = _make_io_objs(
+                                                        $input_file,
+                                                        $out_dir,
+                                                        $file_prfix,
+                                                        $verbose
+                                                    );
+	Function: Instantiates the FastqIO objects used in filter
+	Returns: Array of three FastqIO objects
+	Args: input_file => path to the input fastq file
+          out_dir => path to the output directory
+          file_prefix => prefix of the input fastq file
+          verbose => verbose attribute
+	Throws: NA
+	Comments: NA
+	See Also: NA
+    
+=head2 _make_pairs_io_objs
+
+	Title: _make_pairs_io_objs
+	Usage: my ($fwd_in, $fwd_out, $fwd_filtered_out,
+               $rev_in, $rev_out, $rev_filtered_out) =
+                    $self->_make_pairs_io_objs(
+                                                    $fwd_file,
+                                                    $rev_file,
+                                                    $out_dir,
+                                                    $fwd_prefix,
+                                                    $rev_prefix,
+                                                    $verbose
+                                                );
+	Function: Instantiates the FastqIO objects used in filter
+	Returns: Array of six FastqIO objects
+	Args: fwd_file => path to the input fwd fastq file
+          rev_file => path to the input rev fastq file
+          out_dir => path to the output directory
+          fwd_prefix => prefix of the input fwd fastq file
+          rev_prefix => prefix of the input rev fastq file
+          verbose => verbose attribute
+	Throws: NA
+	Comments: NA
+	See Also: NA
+    
+=head2 _test_seq
+
+	Title: _test_seq
+	Usage: my $filter_flag = $self->_test-seq(
+                                        $diag_aref,
+                                        $id,
+                                        $seq_str,
+                                        $quals_str,
+                                        $verbose);
+	Function: Tests sequences to see if they should be filtered out and why
+	Returns: Boolean informing wither to filter out (1 == filter out)
+	Args: diag_aref => an array ref with diagnostic information about why a seq
+                       is filtered
+          id => sequence id
+          seq_str => sequence string
+          quals_str => quality values string
+          verbose => verbose attribute
+	Throws: NA
+	Comments: Currently the quality values must be in the illumina 1.8 format.
+              When _test_seq is run on pairs the sequence and quality string
+              should be concatenated before running _test_seq.
 	See Also: NA
     
 =head2 _init
@@ -851,6 +1204,18 @@ will fail if 'grep' cannot be found as a system command.
             carp("Empty fastq_file")
 	Comments: NA
 	See Also: NA
+
+=head2 set_fastq_file2
+
+	Title: set_fastq_file2
+	Usage: $filter->set_fastq_file2($rev_file);
+	Function: Sets the input fastq file of reverse matched pairs
+	Returns: 1 on successful completion
+	Args: -rev_file => a fastq file with matching pairs to the first fastq_file
+	Throws: croak("Undefined fastq_file2")
+            carp("Empty fastq_file2")
+	Comments: NA
+	See Also: NA
     
 =head2 set_output_dir
 
@@ -860,7 +1225,7 @@ will fail if 'grep' cannot be found as a system command.
 	Returns: 1 on successful completion
 	Args: -dir => a path to where to print the ouput files
 	Throws: croak("Undefined output dir")
-            carp("Output dir doesn't exist")
+            croak("Output dir doesn't exist")
 	Comments: NA
 	See Also: NA
     
@@ -935,6 +1300,17 @@ will fail if 'grep' cannot be found as a system command.
 	Title: get_fastq_file
 	Usage: my $fastq_file = $filter->get_fastq_file();
 	Function: Gets the fastq file path
+	Returns: String
+	Args: NA
+	Throws: NA
+	Comments: NA
+	See Also: NA
+    
+=head2 get_fastq_file2
+
+	Title: get_fastq_file2
+	Usage: my $fastq_file2 = $filter->get_fastq_file2();
+	Function: Gets the fastq file path for the matched pairs files
 	Returns: String
 	Args: NA
 	Throws: NA

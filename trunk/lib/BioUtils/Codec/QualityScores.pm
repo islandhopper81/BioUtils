@@ -4,10 +4,10 @@ use warnings;
 use strict;
 use Readonly;
 use Class::Std::Utils;
-use MyX::Generic 1.0.1;
+use MyX::Generic 1.0.2;
 use Exporter qw( import );
 our @EXPORT_OK = qw( int_to_illumina_1_8 illumina_1_8_to_int );
-use version; our $VERSION = qv('1.0.1');
+use version; our $VERSION = qv('1.0.2');
 
 
 {
@@ -208,7 +208,7 @@ encoded formats
 
 =head1 VERSION
 
-This document describes BioUtils::Codec::QualityScores version 1.0.1
+This document describes BioUtils::Codec::QualityScores version 1.0.2
 
 
 =head1 SYNOPSIS

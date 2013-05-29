@@ -5,9 +5,9 @@
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('1.0.1');
+use version; our $VERSION = qv('1.0.2');
 
-use BioUtils::QC::FastqFilter 1.0.1;
+use BioUtils::QC::FastqFilter 1.0.2;
 use Getopt::Long;
 use Carp qw(cluck);
 use Pod::Usage;
@@ -152,7 +152,7 @@ fastq_filter - Filter FASTQ sequences
 
 =head1 VERSION
 
-This documentation refers to fastq_filter.pl version 1.0.1
+This documentation refers to fastq_filter.pl version 1.0.2
 
 
 =head1 USAGE
@@ -253,7 +253,7 @@ This perl script filters out sequences as specified by the user input parameters
     Getopt::Long
     Carp qw(cluck)
     Pod::Usage
-    BioUtils::QC::FastqFilter 1.0.1
+    BioUtils::QC::FastqFilter 1.0.2
 
 
 =head1 AUTHOR
