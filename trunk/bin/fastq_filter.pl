@@ -15,6 +15,7 @@ use Pod::Usage;
 
 # Variables
 my $input_file = undef;
+my $input_file2 = undef;
 my $output_dir = undef;
 my $min_length = undef;  # Default is keep all short sequences
 my $min_average_qual = 0;  # Defualt is keep all with low average quality
@@ -27,6 +28,7 @@ my $verbose = 0;
 
 my $options_okay = GetOptions (
     "input_file:s" => \$input_file,
+    "input_file2:s" => \$input_file2,
     "output_dir:s" => \$output_dir,
     "min_length:i" => \$min_length,
     "min_average_qual:i" => \$min_average_qual,
@@ -44,6 +46,7 @@ _check_params();
 # Create a BioUtils::QC::FastqFilter object
 my $filter_obj = BioUtils::QC::FastqFilter->new({
                         fastq_file => $input_file,
+                        fastq_file2 => $input_file2,
                         output_dir => $output_dir,
                         min_len => $min_length,
                         min_avg_qual => $min_average_qual,
@@ -53,8 +56,14 @@ my $filter_obj = BioUtils::QC::FastqFilter->new({
                         verbose => $verbose,
                     });
 
-# run the filter
-$filter_obj->filter();
+if ( defined $input_file2 ) {
+    # run the filter on pairs
+    $filter_obj->filter_pairs();
+}
+else {
+    # run the normal filter
+    $filter_obj->filter();
+}
 
 sub _check_params {
     # Fail if unknown options are encountered
@@ -157,11 +166,12 @@ This documentation refers to fastq_filter.pl version 1.0.2
 
 =head1 USAGE
 
-    fastq_filter --output_dir --input_file --min_length --min_average_qual
-                 --min_base_qual --allow_gaps --allwo_ambiguous_bases
-                 [--verbose] [--help]
+    fastq_filter --output_dir --input_file [--input_file2] --min_length
+                 --min_average_qual --min_base_qual --allow_gaps
+                 --allwo_ambiguous_bases [--verbose] [--help]
 
     --input_file            = Path to the FASTQ input file
+    --input_file2           = Path to the FASTQ input file of matched pairs
     --output_dir            = Path output directory
     --min_length            = A number for the minimum sequence length.
                               DEFAULT = none
@@ -177,8 +187,11 @@ This documentation refers to fastq_filter.pl version 1.0.2
 
 =head1 ARGUMENTS
     
-=head2 --input
+=head2 --input_file
     The path to the FASTQ formated input file.
+    
+=head2 [--input_file2]
+    The patht to the FASTQ formated input file of matched pair.  OPTIONAL.
     
 =head2 --output_dir
     The path to the output directory.
