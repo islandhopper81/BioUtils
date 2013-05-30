@@ -467,58 +467,58 @@ my $filter_g = BioUtils::QC::FastqFilter->new({
     
     $rev_prefix = BioUtils::QC::FastqFilter::_get_file_prefix($file2name);
 
-    cmp_ok( length `grep seq1 $output_dir/$fwd_prefix\_fwd_unfiltered.fastq`, '>', 0,
+    cmp_ok( length `grep seq1 $output_dir/$fwd_prefix\_unfiltered.fastq`, '>', 0,
        "filter(min_len) - seq1 is in fwd unfiltered file" );
-    cmp_ok( length `grep seq1 $output_dir/$fwd_prefix\_fwd_filtered.fastq`, '==', 0,
+    cmp_ok( length `grep seq1 $output_dir/$fwd_prefix\_filtered.fastq`, '==', 0,
        "filter(min_len) - seq1 NOT in fwd filtered file" );
-    cmp_ok( length `grep seq1 $output_dir/$rev_prefix\_rev_unfiltered.fastq`, '>', 0,
+    cmp_ok( length `grep seq1 $output_dir/$rev_prefix\_unfiltered.fastq`, '>', 0,
        "filter(min_len) - seq1 is in rev unfiltered file" );
-    cmp_ok( length `grep seq1 $output_dir/$rev_prefix\_rev_filtered.fastq`, '==', 0,
+    cmp_ok( length `grep seq1 $output_dir/$rev_prefix\_filtered.fastq`, '==', 0,
        "filter(min_len) - seq1 NOT in rev filtered file" );
     
-    cmp_ok( length `grep seq2 $output_dir/$fwd_prefix\_fwd_filtered.fastq`, '>', 0,
+    cmp_ok( length `grep seq2 $output_dir/$fwd_prefix\_filtered.fastq`, '>', 0,
        "filter(min_len) - seq2 is in fwd filtered file" );
-    cmp_ok( length `grep seq2 $output_dir/$fwd_prefix\_fwd_unfiltered.fastq`, '==', 0,
+    cmp_ok( length `grep seq2 $output_dir/$fwd_prefix\_unfiltered.fastq`, '==', 0,
        "filter(min_len) - seq2 NOT in fwd unfiltered file" );
-    cmp_ok( length `grep seq2 $output_dir/$rev_prefix\_rev_filtered.fastq`, '>', 0,
+    cmp_ok( length `grep seq2 $output_dir/$rev_prefix\_filtered.fastq`, '>', 0,
        "filter(min_len) - seq2 is in rev filtered file" );
-    cmp_ok( length `grep seq2 $output_dir/$rev_prefix\_rev_unfiltered.fastq`, '==', 0,
+    cmp_ok( length `grep seq2 $output_dir/$rev_prefix\_unfiltered.fastq`, '==', 0,
        "filter(min_len) - seq2 NOT in rev unfiltered file" );
     
-    cmp_ok( length `grep seq3 $output_dir/$fwd_prefix\_fwd_filtered.fastq`, '>', 0,
+    cmp_ok( length `grep seq3 $output_dir/$fwd_prefix\_filtered.fastq`, '>', 0,
        "filter(min_len) - seq3 is in fwd filtered file" );
-    cmp_ok( length `grep seq3 $output_dir/$fwd_prefix\_fwd_unfiltered.fastq`, '==', 0,
+    cmp_ok( length `grep seq3 $output_dir/$fwd_prefix\_unfiltered.fastq`, '==', 0,
        "filter(min_len) - seq3 NOT in fwd unfiltered file" );
-    cmp_ok( length `grep seq3 $output_dir/$rev_prefix\_rev_filtered.fastq`, '>', 0,
+    cmp_ok( length `grep seq3 $output_dir/$rev_prefix\_filtered.fastq`, '>', 0,
        "filter(min_len) - seq3 is in rev filtered file" );
-    cmp_ok( length `grep seq3 $output_dir/$rev_prefix\_rev_unfiltered.fastq`, '==', 0,
+    cmp_ok( length `grep seq3 $output_dir/$rev_prefix\_unfiltered.fastq`, '==', 0,
        "filter(min_len) - seq3 NOT in rev unfiltered file" );
     
-    cmp_ok( length `grep seq4 $output_dir/$fwd_prefix\_fwd_filtered.fastq`, '>', 0,
+    cmp_ok( length `grep seq4 $output_dir/$fwd_prefix\_filtered.fastq`, '>', 0,
        "filter(min_len) - seq4 is in fwd filtered file" );
-    cmp_ok( length `grep seq4 $output_dir/$fwd_prefix\_fwd_unfiltered.fastq`, '==', 0,
+    cmp_ok( length `grep seq4 $output_dir/$fwd_prefix\_unfiltered.fastq`, '==', 0,
        "filter(min_len) - seq4 NOT in fwd unfiltered file" );
-    cmp_ok( length `grep seq4 $output_dir/$rev_prefix\_rev_filtered.fastq`, '>', 0,
+    cmp_ok( length `grep seq4 $output_dir/$rev_prefix\_filtered.fastq`, '>', 0,
        "filter(min_len) - seq4 is in rev filtered file" );
-    cmp_ok( length `grep seq4 $output_dir/$rev_prefix\_rev_unfiltered.fastq`, '==', 0,
+    cmp_ok( length `grep seq4 $output_dir/$rev_prefix\_unfiltered.fastq`, '==', 0,
        "filter(min_len) - seq4 NOT in rev unfiltered file" );
     
-    cmp_ok( length `grep seq5 $output_dir/$fwd_prefix\_fwd_filtered.fastq`, '>', 0,
+    cmp_ok( length `grep seq5 $output_dir/$fwd_prefix\_filtered.fastq`, '>', 0,
        "filter(min_len) - seq5 is in fwd filtered file" );
-    cmp_ok( length `grep seq5 $output_dir/$fwd_prefix\_fwd_unfiltered.fastq`, '==', 0,
+    cmp_ok( length `grep seq5 $output_dir/$fwd_prefix\_unfiltered.fastq`, '==', 0,
        "filter(min_len) - seq5 NOT in fwd unfiltered file" );
-    cmp_ok( length `grep seq5 $output_dir/$rev_prefix\_rev_filtered.fastq`, '>', 0,
+    cmp_ok( length `grep seq5 $output_dir/$rev_prefix\_filtered.fastq`, '>', 0,
        "filter(min_len) - seq5 is in rev filtered file" );
-    cmp_ok( length `grep seq5 $output_dir/$rev_prefix\_rev_unfiltered.fastq`, '==', 0,
+    cmp_ok( length `grep seq5 $output_dir/$rev_prefix\_unfiltered.fastq`, '==', 0,
        "filter(min_len) - seq5 NOT in rev unfiltered file" );
     
-    cmp_ok( length `grep seq6 $output_dir/$fwd_prefix\_fwd_filtered.fastq`, '>', 0,
+    cmp_ok( length `grep seq6 $output_dir/$fwd_prefix\_filtered.fastq`, '>', 0,
        "filter(min_len) - seq6 is in fwd filtered file" );
-    cmp_ok( length `grep seq6 $output_dir/$fwd_prefix\_fwd_unfiltered.fastq`, '==', 0,
+    cmp_ok( length `grep seq6 $output_dir/$fwd_prefix\_unfiltered.fastq`, '==', 0,
        "filter(min_len) - seq6 NOT in fwd unfiltered file" );
-    cmp_ok( length `grep seq6 $output_dir/$rev_prefix\_rev_filtered.fastq`, '>', 0,
+    cmp_ok( length `grep seq6 $output_dir/$rev_prefix\_filtered.fastq`, '>', 0,
        "filter(min_len) - seq6 is in rev filtered file" );
-    cmp_ok( length `grep seq6 $output_dir/$rev_prefix\_rev_unfiltered.fastq`, '==', 0,
+    cmp_ok( length `grep seq6 $output_dir/$rev_prefix\_unfiltered.fastq`, '==', 0,
        "filter(min_len) - seq6 NOT in rev unfiltered file" );
 }
 

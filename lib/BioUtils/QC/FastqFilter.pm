@@ -302,14 +302,14 @@ use MyX::Generic;
                         stream_type => '>',
                         file => $out_dir . "/" .
                                 $fwd_prefix .
-                                '_fwd_unfiltered.fastq'
+                                '_unfiltered.fastq'
                     });
             if ( $verbose ) {
                 $fwd_filtered_out = BioUtils::FastqIO->new( {
                                     stream_type => '>',
                                     file => $out_dir . "/" .
                                             $fwd_prefix .
-                                            '_fwd_filtered.fastq'
+                                            '_filtered.fastq'
                                 });
             }
             $rev_in = BioUtils::FastqIO->new( {
@@ -320,14 +320,14 @@ use MyX::Generic;
                         stream_type => '>',
                         file => $out_dir . "/" .
                                 $rev_prefix .
-                                '_rev_unfiltered.fastq'
+                                '_unfiltered.fastq'
                     });
             if ( $verbose ) {
                 $rev_filtered_out = BioUtils::FastqIO->new( {
                                     stream_type => '>',
                                     file => $out_dir . "/" .
                                             $rev_prefix .
-                                            '_rev_filtered.fastq'
+                                            '_filtered.fastq'
                                 });
             }
         };
