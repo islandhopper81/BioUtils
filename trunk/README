@@ -22,6 +22,8 @@ To install this module, run the following commands:
 
 DEPENDENCIES
 
+BLAST 2.2.25+ (command line version; needed only for QC::ContaminantFilter)
+
 Carp
 Chart::Graph::Gnuplot
 Class::Std::Utils
