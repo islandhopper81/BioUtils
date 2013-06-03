@@ -349,85 +349,85 @@ use MyX::Generic;
         my ($self, $diag_aref, $id, $seq_str, $quals_str, $verbose) = @_;
         
         # A boolean to keep track if the sequence needs to be filtered out
-            my $filter_flag = 0;
+        my $filter_flag = 0;
 
-            # A data structure for storing this (a single) sequence's diagnostics
-            my @diagnostics = ();
-            push @$diag_aref, $id;
+        # A data structure for storing this (a single) sequence's diagnostics
+        my @diagnostics = ();
+        push @$diag_aref, $id;
+        
+        # Decode the quals into ints and store in an aref
+        my $int_quals_aref = illumina_1_8_to_int($quals_str);
+        #print Dumper($int_quals_aref) . "\n";
+        
+        # Create a statistics descriptive object for qual score testing
+        my $stat = Statistics::Descriptive::Sparse->new();
+        $stat->add_data(@{$int_quals_aref});
+        
+        # Test length
+        if ( _too_short($self->get_min_len(), $seq_str) ) {
+            return $filter_flag if ( ! $verbose );
             
-            # Decode the quals into ints and store in an aref
-            my $int_quals_aref = illumina_1_8_to_int($quals_str);
-            #print Dumper($int_quals_aref) . "\n";
+            # verbose operations
+            push @$diag_aref, 1;
+            $filter_flag = 1;
+        }
+        else {
+            push @$diag_aref, 0;
+        }
+        
+        # Test minimum average quality over whole read
+        if ( _below_avg_qual($self->get_min_avg_qual(), $stat->mean()) ) {
+            return 1 if ( ! $verbose );
             
-            # Create a statistics descriptive object for qual score testing
-            my $stat = Statistics::Descriptive::Sparse->new();
-            $stat->add_data(@{$int_quals_aref});
+            # verbose operations
+            push @$diag_aref, 1;
+            $filter_flag = 1;
+        }
+        else {
+            push @$diag_aref, 0;
+        }
+        
+        # Test minimum base quality
+        if ( _below_min_base_qual(
+                                  $self->get_min_base_qual(),
+                                  $stat->min())
+            ) {
+            return 1 if ( ! $verbose );
             
-            # Test length
-            if ( _too_short($self->get_min_len(), $seq_str) ) {
-                return $filter_flag if ( ! $verbose );
-                
-                # verbose operations
-                push @$diag_aref, 1;
-                $filter_flag = 1;
-            }
-            else {
-                push @$diag_aref, 0;
-            }
+            # verbose operations
+            push @$diag_aref, 1;
+            $filter_flag = 1;
+        }
+        else {
+            push @$diag_aref, 0;
+        }
+        
+        # Test that there are no gaps
+        if ( _has_gaps($seq_str) and ! $self->get_allow_gaps() ) {
+            return 1 if ( ! $verbose );
             
-            # Test minimum average quality over whole read
-            if ( _below_avg_qual($self->get_min_avg_qual(), $stat->mean()) ) {
-                return 1 if ( ! $verbose );
-                
-                # verbose operations
-                push @$diag_aref, 1;
-                $filter_flag = 1;
-            }
-            else {
-                push @$diag_aref, 0;
-            }
+            # verbose operations
+            push @$diag_aref, 1;
+            $filter_flag = 1;
+        }
+        else {
+            push @$diag_aref, 0;
+        }
+        
+        # Test that there are no ambiguous bases
+        if ( _has_ambiguous_bases($seq_str) and
+            ! $self->get_allow_ambig_bases ) {
+            return 1 if ( ! $verbose );
             
-            # Test minimum base quality
-            if ( _below_min_base_qual(
-                                      $self->get_min_base_qual(),
-                                      $stat->min())
-                ) {
-                return 1 if ( ! $verbose );
-                
-                # verbose operations
-                push @$diag_aref, 1;
-                $filter_flag = 1;
-            }
-            else {
-                push @$diag_aref, 0;
-            }
-            
-            # Test that there are no gaps
-            if ( _has_gaps($seq_str) and ! $self->get_allow_gaps() ) {
-                return 1 if ( ! $verbose );
-                
-                # verbose operations
-                push @$diag_aref, 1;
-                $filter_flag = 1;
-            }
-            else {
-                push @$diag_aref, 0;
-            }
-            
-            # Test that there are no ambiguous bases
-            if ( _has_ambiguous_bases($seq_str) and
-                ! $self->get_allow_ambig_bases ) {
-                return 1 if ( ! $verbose );
-                
-                # verbose operations
-                push @$diag_aref, 1;
-                $filter_flag = 1;
-            }
-            else {
-                push @$diag_aref, 0;
-            }
-            
-            return $filter_flag;
+            # verbose operations
+            push @$diag_aref, 1;
+            $filter_flag = 1;
+        }
+        else {
+            push @$diag_aref, 0;
+        }
+        
+        return $filter_flag;
     }
     
     sub _init {

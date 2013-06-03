@@ -1,6 +1,6 @@
 
 use BioUtils::QC::FastqFilter 1.0.2;
-use Test::More tests => 123;
+use Test::More tests => 127;
 use Test::Exception;
 use Test::Warn;
 use File::Temp qw/ tempfile tempdir /;
@@ -339,6 +339,46 @@ my $filter_g = BioUtils::QC::FastqFilter->new({
     close($fh);
     
     cmp_ok( -s $filename, ">", 0, "_print_diagnostics - file created" );
+}
+
+# test _test_seq
+{
+    # make a local filter
+    my $filter_l = BioUtils::QC::FastqFilter->new({
+                        fastq_file => $filename,
+                        output_dir => $output_dir,
+                        min_len => 4,
+                        min_avg_qual => 20,
+                        min_base_qual => 3,
+                        allow_gaps => 0,
+                        allow_ambig_bases => 0,
+                        verbose => 1
+                    });
+    
+    # make an array ref as a place holder for the diagnositcs aref required to
+    # run _test_seq
+    my $aref = ();
+    
+    # test a good sequence
+    is( $filter_l->_test_seq($aref, "seq1", "ATCG", "IIII", 1),
+       0,
+       "_test_seq -- good seq");
+    
+    # test a sequence with below avg qual score
+    is( $filter_l->_test_seq($aref, "seq1", "ATCG", "++++", 1),
+       1,
+       "_test_seq -- below avg qual");
+    
+    # test sequences with below min qual score
+    is( $filter_l->_test_seq($aref, "seq1", "ATCG", "III#", 1),
+       1,
+       "_test_seq -- below min qual");
+    
+    # test sequences with below min len
+    is( $filter_l->_test_seq($aref, "seq1", "ATC", "III", 1),
+       1,
+       "_test_seq -- below min len");
+
 }
 
 # test filter -- this is the main subroutine
