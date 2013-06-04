@@ -188,50 +188,60 @@ This documentation refers to fastq_filter.pl version 1.0.2
 =head1 ARGUMENTS
     
 =head2 --input_file
-    The path to the FASTQ formated input file.
+
+The path to the FASTQ formated input file.
     
 =head2 [--input_file2]
-    The patht to the FASTQ formated input file of matched pair.  OPTIONAL.
+
+The patht to the FASTQ formated input file of matched pair.  OPTIONAL.
     
 =head2 --output_dir
-    The path to the output directory.
+
+The path to the output directory.
 
 =head2 --min_length
-    The minimum sequence length of sequences to keep.
+
+The minimum sequence length of sequences to keep.
     
 =head2 --min_average_qual
-    The minimum average quality value for the enitre read given as an integer.
+
+The minimum average quality value for the enitre read given as an integer.
     
 =head2 --min_base_qual
-    The minimum base quality value.  Any read that has at least one base below
-    the --min_base_qual value will be filtered out of the final set.  IMPORTANT:
-    It is important to not that most gaps are scored as a 0.  Therefore you may
-    set --min_base_qual to some number greater than 0 and that will effectively
-    remove the gaps even if --allow_gaps is set.
+    
+The minimum base quality value.  Any read that has at least one base below
+the --min_base_qual value will be filtered out of the final set.  IMPORTANT:
+It is important to not that most gaps are scored as a 0.  Therefore you may
+set --min_base_qual to some number greater than 0 and that will effectively
+remove the gaps even if --allow_gaps is set.
     
 =head2 --allow_gaps
-    A flag to keep sequences that have gap characters in them.  If this flag is
-    not set on the commandline sequences with gap characters are automatically
-    filtered out of the final set.  IMPORTANT: if --min_base_qual is greater
-    than 0 the sequences with gaps (which generally have a quality score of 0)
-    are removed even if --allow_gaps is set.
+
+A flag to keep sequences that have gap characters in them.  If this flag is
+not set on the commandline sequences with gap characters are automatically
+filtered out of the final set.  IMPORTANT: if --min_base_qual is greater
+than 0 the sequences with gaps (which generally have a quality score of 0)
+are removed even if --allow_gaps is set.
     
 =head2 --allow_ambiguous_bases
-    A flag to keep sequences that have ambiguous IUPAC bases.  if this flag is
-    not set on the commandline sequences with ambiguous bases are automatically
-    filtered out fo the final set.
+    
+A flag to keep sequences that have ambiguous IUPAC bases.  if this flag is
+not set on the commandline sequences with ambiguous bases are automatically
+filtered out fo the final set.
     
 =head2 [--verbose]
-    An optional flag too allow for extra processing and extra output files.  One
-    may want to know why the sequences are being filtered out or what parameters
-    are causing most sequences to be filtered out.  By turing on this flag each
-    sequence is tested by each parameter.  A table is output that can be loaded
-    into gnuplot or other software to diagnose what is filtering out most reads.
-    Also a file with all the filtered sequences is output for downstream analysis
-    as needed.  
+    
+An optional flag too allow for extra processing and extra output files.  One
+may want to know why the sequences are being filtered out or what parameters
+are causing most sequences to be filtered out.  By turing on this flag each
+sequence is tested by each parameter.  A table is output that can be loaded
+into gnuplot or other software to diagnose what is filtering out most reads.
+Also a file with all the filtered sequences is output for downstream analysis
+as needed.  
 
 =head2 [--help]
-    An optional parameter to print a usage statement.
+    
+An optional parameter to print a usage statement.
     
 
 =head1 DESCRIPTION
@@ -239,39 +249,40 @@ This documentation refers to fastq_filter.pl version 1.0.2
 This perl script filters out sequences as specified by the user input parameters.
 
 =head2 OUTPUTS
-    If the --verbose flag is not used there will be one output file containing
-    all the sequneces that pass ALL the tests specified by the parameters.
-    These sequences are called 'unfiltered' sequences.  This output file will be
-    in FASTQ format, and will be called unfiltered.fastq.
 
-    If the --verbose flag is included in the commmand there will be three output    
-    files.  The first is the typical FASTQ file contain sequences that pass ALL
-    the tests specified by the parameters.  The second is a FASTQ file that
-    contains all sequences that do NOT pass at least ONE test (all remaining
-    sequences that are not in the first file).  This file will be called
-    filtered.fastq.  The third is a table with a line for each sequence that
-    failed a test showing which tests it failed.  This table can be loaded into
-    a gnuplot scipt or other script to show why what tests most of the sequenes
-    failed.  Parameter can be adjusted accordingly.
+If the --verbose flag is not used there will be one output file containing
+all the sequneces that pass ALL the tests specified by the parameters.
+These sequences are called 'unfiltered' sequences.  This output file will be
+in FASTQ format, and will be called unfiltered.fastq.
+
+If the --verbose flag is included in the commmand there will be three output    
+files.  The first is the typical FASTQ file contain sequences that pass ALL
+the tests specified by the parameters.  The second is a FASTQ file that
+contains all sequences that do NOT pass at least ONE test (all remaining
+sequences that are not in the first file).  This file will be called
+filtered.fastq.  The third is a table with a line for each sequence that
+failed a test showing which tests it failed.  This table can be loaded into
+a gnuplot scipt or other script to show why what tests most of the sequenes
+failed.  Parameter can be adjusted accordingly.
 
 
 =head1 CONFIGURATION AND ENVIRONMENT
     
-    No special configurations or environment variables needed
+No special configurations or environment variables needed
     
     
 =head1 DEPENDANCIES
 
-    version
-    Getopt::Long
-    Carp qw(cluck)
-    Pod::Usage
-    BioUtils::QC::FastqFilter 1.0.2
+version
+Getopt::Long
+Carp qw(cluck)
+Pod::Usage
+BioUtils::QC::FastqFilter 1.0.2
 
 
 =head1 AUTHOR
 
-    Scott Yourstone     scott.yourstone81@gmail.com
+Scott Yourstone     scott.yourstone81@gmail.com
     
     
 =head1 LICENCE AND COPYRIGHT
