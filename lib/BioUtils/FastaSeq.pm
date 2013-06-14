@@ -7,8 +7,8 @@ use Carp qw(croak carp);
 use Class::Std::Utils;
 use List::MoreUtils qw(any);
 use Readonly;
-use MyX::Generic 1.0.2;
-use version; our $VERSION = qv('1.0.2');
+use MyX::Generic 1.0.3;
+use version; our $VERSION = qv('1.0.3');
 
 {
     Readonly my $NEW_USAGE => q{ new( {header =>, seq => } ) };
@@ -120,7 +120,7 @@ BioUtils::FastaSeq - A data structure for sequences
 
 =head1 VERSION
 
-This document describes BioUtils::FastaSeq version 1.0.2
+This document describes BioUtils::FastaSeq version 1.0.3
 
 
 =head1 SYNOPSIS

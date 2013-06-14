@@ -3,7 +3,7 @@ package BioUtils::QC::FastqFilter;
 use warnings;
 use strict;
 
-use version; our $VERSION = qv('1.0.2');
+use version; our $VERSION = qv('1.0.3');
 
 use Class::Std::Utils;
 use Scalar::Util qw(looks_like_number);
@@ -15,7 +15,7 @@ use Data::Dumper qw(Dumper);
 use Readonly;
 use Cwd;
 use File::Basename;
-use BioUtils::FastqIO 1.0.2;
+use BioUtils::FastqIO 1.0.3;
 use BioUtils::Codec::QualityScores qw(illumina_1_8_to_int);
 use MyX::Generic;
 
@@ -112,7 +112,7 @@ use MyX::Generic;
         my $file_prefix = _get_file_prefix($input_file); # for making output files
     
         # Build the FASTQIO objects
-        my ($in, $out, $filtered_out) = _make_io_objs($input_file,
+        my ($in, $out, $LQ) = _make_io_objs($input_file,
                                                       $out_dir,
                                                       $file_prefix,
                                                       $verbose); 
@@ -127,7 +127,7 @@ use MyX::Generic;
             my $quals_str = $fastq_seq->get_quals_str();
             
             # run tests
-            my $filter_flag = $self->_test_seq(\@diagnostics,
+            my $LQ_flag = $self->_test_seq(\@diagnostics,
                                                $seq_id,
                                                $seq_str,
                                                $quals_str,
@@ -136,16 +136,17 @@ use MyX::Generic;
             
             ### All the tests are done.  Now do some output.
             
-            # if the sequence was flagged as filtered record the diagnostic info
-            if ( $filter_flag ) {  
+            # if the sequence was flagged as filtered (ie LQ--low qual) record
+            # the diagnostic info
+            if ( $LQ_flag ) {  
                 push @diag_table, \@diagnostics;
             }
             
             # if the sequence is filtered out and we are in verbose mode print
-            # the sequence.  Else just print the unfiltered seqs.  Unfiltered
+            # the sequence.  Else just print the HQ seqs.  HQ
             # means seqs that passed the tests.
-            if ( $filter_flag and $verbose ) {
-                $filtered_out->write_seq($fastq_seq);
+            if ( $LQ_flag and $verbose ) {
+                $LQ->write_seq($fastq_seq);
             }
             else {
                 $out->write_seq($fastq_seq);
@@ -172,8 +173,8 @@ use MyX::Generic;
         my $rev_prefix = _get_file_prefix($rev_file); # for making output files
         
         # Build the FASTQIO objects
-        my ($fwd_in, $fwd_out, $fwd_filtered_out,
-            $rev_in, $rev_out, $rev_filtered_out) = _make_pairs_io_objs(
+        my ($fwd_in, $fwd_out, $fwd_LQ,
+            $rev_in, $rev_out, $rev_LQ) = _make_pairs_io_objs(
                                                         $fwd_file,
                                                         $rev_file,
                                                         $out_dir,
@@ -205,7 +206,7 @@ use MyX::Generic;
                             $rev_seq->get_quals_str();
             
             ### run tests ###
-            my $filter_flag = $self->_test_seq(\@diagnostics,
+            my $LQ_flag = $self->_test_seq(\@diagnostics,
                                                $seq_id,
                                                $seq_str,
                                                $quals_str,
@@ -213,16 +214,16 @@ use MyX::Generic;
             
             ### Now output ###
             # if the sequence was flagged as filtered record the diagnostic info
-            if ( $filter_flag) {
+            if ( $LQ_flag) {
                 push @diag_table, \@diagnostics;
             }
             
             # if the sequence is filtered out and we are in verbose mode print
-            # the sequence.  Else just print the unfiltered seqs.  Unfiltered
+            # the sequence.  Else just print the HQ seqs.  HQ
             # means seqs that passed the tests.
-            if ( $filter_flag and $verbose ) {
-                $fwd_filtered_out->write_seq($fwd_seq);
-                $rev_filtered_out->write_seq($rev_seq);
+            if ( $LQ_flag and $verbose ) {
+                $fwd_LQ->write_seq($fwd_seq);
+                $rev_LQ->write_seq($rev_seq);
             }
             else {
                 $fwd_out->write_seq($fwd_seq);
@@ -251,7 +252,7 @@ use MyX::Generic;
     sub _make_io_objs {
         my ($input_file, $out_dir, $file_prefix, $verbose) = @_;
         
-        my ($in, $out, $filtered_out);
+        my ($in, $out, $LQ);
         
         eval {
             $in = BioUtils::FastqIO->new( {
@@ -262,14 +263,14 @@ use MyX::Generic;
                         stream_type => '>',
                         file => $out_dir . "/" .
                                 $file_prefix .
-                                '_unfiltered.fastq'
+                                '_HQ.fastq'
                     });
             if ( $verbose ) {
-                $filtered_out = BioUtils::FastqIO->new( {
+                $LQ = BioUtils::FastqIO->new( {
                                     stream_type => '>',
                                     file => $out_dir . "/" .
                                             $file_prefix .
-                                            '_filtered.fastq'
+                                            '_LQ.fastq'
                                 });
             }
         };
@@ -283,15 +284,15 @@ use MyX::Generic;
             print $@;
         }
         
-        return ($in, $out, $filtered_out);
+        return ($in, $out, $LQ);
     }
     
     sub _make_pairs_io_objs {
         my ($fwd_file, $rev_file, $out_dir,
             $fwd_prefix, $rev_prefix, $verbose) = @_;
         
-        my ($fwd_in, $fwd_out, $fwd_filtered_out,
-            $rev_in, $rev_out, $rev_filtered_out);
+        my ($fwd_in, $fwd_out, $fwd_LQ,
+            $rev_in, $rev_out, $rev_LQ);
         
         eval {
             $fwd_in = BioUtils::FastqIO->new( {
@@ -302,14 +303,14 @@ use MyX::Generic;
                         stream_type => '>',
                         file => $out_dir . "/" .
                                 $fwd_prefix .
-                                '_unfiltered.fastq'
+                                '_HQ.fastq'
                     });
             if ( $verbose ) {
-                $fwd_filtered_out = BioUtils::FastqIO->new( {
+                $fwd_LQ = BioUtils::FastqIO->new( {
                                     stream_type => '>',
                                     file => $out_dir . "/" .
                                             $fwd_prefix .
-                                            '_filtered.fastq'
+                                            '_LQ.fastq'
                                 });
             }
             $rev_in = BioUtils::FastqIO->new( {
@@ -320,14 +321,14 @@ use MyX::Generic;
                         stream_type => '>',
                         file => $out_dir . "/" .
                                 $rev_prefix .
-                                '_unfiltered.fastq'
+                                '_HQ.fastq'
                     });
             if ( $verbose ) {
-                $rev_filtered_out = BioUtils::FastqIO->new( {
+                $rev_LQ = BioUtils::FastqIO->new( {
                                     stream_type => '>',
                                     file => $out_dir . "/" .
                                             $rev_prefix .
-                                            '_filtered.fastq'
+                                            '_LQ.fastq'
                                 });
             }
         };
@@ -341,15 +342,16 @@ use MyX::Generic;
             print $@;
         }
         
-        return ($fwd_in, $fwd_out, $fwd_filtered_out,
-                $rev_in, $rev_out, $rev_filtered_out);
+        return ($fwd_in, $fwd_out, $fwd_LQ,
+                $rev_in, $rev_out, $rev_LQ);
     }
     
     sub _test_seq {
         my ($self, $diag_aref, $id, $seq_str, $quals_str, $verbose) = @_;
         
         # A boolean to keep track if the sequence needs to be filtered out
-        my $filter_flag = 0;
+        # LQ stands for low quality
+        my $LQ_flag = 0;
 
         # A data structure for storing this (a single) sequence's diagnostics
         my @diagnostics = ();
@@ -365,11 +367,11 @@ use MyX::Generic;
         
         # Test length
         if ( _too_short($self->get_min_len(), $seq_str) ) {
-            return $filter_flag if ( ! $verbose );
+            return $LQ_flag if ( ! $verbose );
             
             # verbose operations
             push @$diag_aref, 1;
-            $filter_flag = 1;
+            $LQ_flag = 1;
         }
         else {
             push @$diag_aref, 0;
@@ -381,7 +383,7 @@ use MyX::Generic;
             
             # verbose operations
             push @$diag_aref, 1;
-            $filter_flag = 1;
+            $LQ_flag = 1;
         }
         else {
             push @$diag_aref, 0;
@@ -396,7 +398,7 @@ use MyX::Generic;
             
             # verbose operations
             push @$diag_aref, 1;
-            $filter_flag = 1;
+            $LQ_flag = 1;
         }
         else {
             push @$diag_aref, 0;
@@ -408,7 +410,7 @@ use MyX::Generic;
             
             # verbose operations
             push @$diag_aref, 1;
-            $filter_flag = 1;
+            $LQ_flag = 1;
         }
         else {
             push @$diag_aref, 0;
@@ -421,13 +423,13 @@ use MyX::Generic;
             
             # verbose operations
             push @$diag_aref, 1;
-            $filter_flag = 1;
+            $LQ_flag = 1;
         }
         else {
             push @$diag_aref, 0;
         }
         
-        return $filter_flag;
+        return $LQ_flag;
     }
     
     sub _init {
@@ -775,7 +777,7 @@ BioUtils::QC::FastqFilter - Filters seqs in a Fastq file based on quality
 
 =head1 VERSION
 
-This document describes BioUtils::QC::FastqFilter version 1.0.2
+This document describes BioUtils::QC::FastqFilter version 1.0.3
 
 
 =head1 SYNOPSIS
@@ -957,7 +959,7 @@ will fail if 'grep' cannot be found as a system command.
     Readonly
     Cwd
     File::Basename
-    BioUtils::FastqIO 1.0.2
+    BioUtils::FastqIO 1.0.3
     BioUtils::Codec::QualityScores qw(illumina_1_8_to_int)
     MyX::Generic
 
@@ -1030,12 +1032,12 @@ will fail if 'grep' cannot be found as a system command.
 =head2 _make_io_objs
 
 	Title: _make_io_objs
-	Usage: my ($in, $out, $filtered) = _make_io_objs(
-                                                        $input_file,
-                                                        $out_dir,
-                                                        $file_prfix,
-                                                        $verbose
-                                                    );
+	Usage: my ($in, $out, $LQ) = _make_io_objs(
+                                                $input_file,
+                                                $out_dir,
+                                                $file_prfix,
+                                                $verbose
+                                              );
 	Function: Instantiates the FastqIO objects used in filter
 	Returns: Array of three FastqIO objects
 	Args: input_file => path to the input fastq file
@@ -1049,8 +1051,8 @@ will fail if 'grep' cannot be found as a system command.
 =head2 _make_pairs_io_objs
 
 	Title: _make_pairs_io_objs
-	Usage: my ($fwd_in, $fwd_out, $fwd_filtered_out,
-               $rev_in, $rev_out, $rev_filtered_out) =
+	Usage: my ($fwd_in, $fwd_out, $fwd_LQ,
+               $rev_in, $rev_out, $rev_LQ) =
                     $self->_make_pairs_io_objs(
                                                     $fwd_file,
                                                     $rev_file,
@@ -1074,7 +1076,7 @@ will fail if 'grep' cannot be found as a system command.
 =head2 _test_seq
 
 	Title: _test_seq
-	Usage: my $filter_flag = $self->_test-seq(
+	Usage: my $LQ_flag = $self->_test-seq(
                                         $diag_aref,
                                         $id,
                                         $seq_str,

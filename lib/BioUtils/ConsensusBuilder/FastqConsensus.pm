@@ -7,8 +7,8 @@ use Class::Std::Utils;
 use Carp;
 use Readonly;
 use List::MoreUtils qw(any);
-use version; our $VERSION = qv('1.0.2');
-use BioUtils::FastqSeq 1.0.2;
+use version; our $VERSION = qv('1.0.3');
+use BioUtils::FastqSeq 1.0.3;
 use base qw(BioUtils::FastqSeq);  # inherits from FastqSeq
 
 {
@@ -73,7 +73,7 @@ to avoid confusion
 
 =head1 VERSION
 
-This documentation refers to FastqConsensus version 1.0.2.
+This documentation refers to FastqConsensus version 1.0.3.
 
 =head1 Included Modules
 

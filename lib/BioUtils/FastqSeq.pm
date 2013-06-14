@@ -7,10 +7,10 @@ use Class::Std::Utils;
 use List::MoreUtils qw(any);
 use Readonly;
 use Carp qw(croak);
-use MyX::Generic 1.0.2;
-use BioUtils::FastaSeq 1.0.2;
+use MyX::Generic 1.0.3;
+use BioUtils::FastaSeq 1.0.3;
 
-use version; our $VERSION = qv('1.0.2');
+use version; our $VERSION = qv('1.0.3');
 
 {
     Readonly my $ASCII_OFFSET => 33;
@@ -194,7 +194,7 @@ FastqSeq - A data structure to store a sequence string and quality string
 
 =head1 VERSION
 
-This documentation refers to FastqSeq version 1.0.2.
+This documentation refers to FastqSeq version 1.0.3.
 
 =head1 Included Modules
 
