@@ -11,9 +11,9 @@ use Readonly;
 use Carp qw(carp croak);
 use File::Temp qw(tempfile);
 use Chart::Graph::Gnuplot qw(gnuplot);
-use BioUtils::FastqIO 1.0.3;
-use MyX::Generic 1.0.3;
-use version; our $VERSION = qv('1.0.3');
+use BioUtils::FastqIO 1.0.4;
+use MyX::Generic 1.0.4;
+use version; our $VERSION = qv('1.0.4');
 
 
 {
@@ -670,12 +670,12 @@ DNA sequences
 
 =head1 VERSION
 
-This document describes BioUtils::SeqSet::Diagnostics version 1.0.3
+This document describes BioUtils::SeqSet::Diagnostics version 1.0.4
 
 
 =head1 SYNOPSIS
 
-    use BioUtils::SeqSet::Diagnostics 1.0.3;
+    use BioUtils::SeqSet::Diagnostics 1.0.4;
 	
 	my $my_diag_obj = BioUtils::SeqSet::Diagnostics->new();
 	
@@ -736,8 +736,8 @@ gnuplot must be installed and locatable by Chart::Graph::Gnuplot qw(gnuplot)
 	Carp qw(carp croak)
 	File::Temp qw(tempfile)
 	Chart::Graph::Gnuplot qw(gnuplot)
-	BioUtils::FastqIO 1.0.3
-	MyX::Generic 1.0.3
+	BioUtils::FastqIO 1.0.4
+	MyX::Generic 1.0.4
 	version
 
 
@@ -1130,10 +1130,32 @@ Scott Yourstone  C<< <scott.yourstone81@gmail.com> >>
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (c) 2012, Scott Yourstone C<< <scott.yourstone81@gmail.com> >>. All rights reserved.
+Copyright (c) 2013, Scott Yourstone
+All rights reserved.
 
-This module is free software; you can redistribute it and/or
-modify it under the same terms as Perl itself. See L<perlartistic>.
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met: 
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer. 
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution. 
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+The views and conclusions contained in the software and documentation are those
+of the authors and should not be interpreted as representing official policies, 
+either expressed or implied, of the FreeBSD Project.
 
 
 =head1 DISCLAIMER OF WARRANTY
