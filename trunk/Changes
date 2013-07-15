@@ -1,6 +1,6 @@
 Revision history for BioUtils
 
-1.0.3  Fri Jun 14, 2013
+1.0.4  Fri Jun 14, 2013
        - Changed fastq filter output file name conventions.  Previously they
          were named filtered and unfiltered.  They are now HQ (high quality)
 	 and LQ (low quality).
