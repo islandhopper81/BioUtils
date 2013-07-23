@@ -11,9 +11,9 @@ use Readonly;
 use Carp qw(carp croak);
 use File::Temp qw(tempfile);
 use Chart::Graph::Gnuplot qw(gnuplot);
-use BioUtils::FastqIO 1.0.4;
-use MyX::Generic 1.0.4;
-use version; our $VERSION = qv('1.0.4');
+use BioUtils::FastqIO 1.0.5;
+use MyX::Generic 1.0.5;
+use version; our $VERSION = qv('1.0.5');
 
 
 {
@@ -670,12 +670,12 @@ DNA sequences
 
 =head1 VERSION
 
-This document describes BioUtils::SeqSet::Diagnostics version 1.0.4
+This document describes BioUtils::SeqSet::Diagnostics version 1.0.5
 
 
 =head1 SYNOPSIS
 
-    use BioUtils::SeqSet::Diagnostics 1.0.4;
+    use BioUtils::SeqSet::Diagnostics 1.0.5;
 	
 	my $my_diag_obj = BioUtils::SeqSet::Diagnostics->new();
 	
@@ -736,8 +736,8 @@ gnuplot must be installed and locatable by Chart::Graph::Gnuplot qw(gnuplot)
 	Carp qw(carp croak)
 	File::Temp qw(tempfile)
 	Chart::Graph::Gnuplot qw(gnuplot)
-	BioUtils::FastqIO 1.0.4
-	MyX::Generic 1.0.4
+	BioUtils::FastqIO 1.0.5
+	MyX::Generic 1.0.5
 	version
 
 

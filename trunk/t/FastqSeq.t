@@ -2,17 +2,17 @@
 use strict;
 use warnings;
 
-use FastqSeq;
-use Test::More tests => 35;
+use BioUtils::FastqSeq;
+use Test::More tests => 37;
 use Test::Exception;
 
-BEGIN { use_ok( 'FastqSeq' ); }
+BEGIN { use_ok( 'BioUtils::FastqSeq' ); }
 
 ### Create a FastqSeq object to use for testing
 my $header = '@Seq1 Homo Sapien';
 my $seq = "ATCG";
 my $quals_str = "1234";
-my $fastq_seq = FastqSeq->new({header => $header, seq => $seq, quals_str => $quals_str});
+my $fastq_seq = BioUtils::FastqSeq->new({header => $header, seq => $seq, quals_str => $quals_str});
 
 # Test the simple getter methods
 lives_ok( sub { $fastq_seq->get_header() }, "expected to live" );
@@ -31,15 +31,18 @@ $fastq_seq->set_seq($new_seq);
 $fastq_seq->set_quals_str($new_quals_str);
 is( $fastq_seq->get_seq(), $new_seq, "set_seq()" );
 is( $fastq_seq->get_quals_str(), $new_quals_str, "set_quals_str()" );
+my $new_header = "seq2";
+is( $fastq_seq->set_header($new_header), 1, "set_header->(seq2)" );
+is( $fastq_seq->get_header(), $new_header, "get_header == seq2" );
 
 # test to_FastaSeq
 {
-    my $fastq_seq = FastqSeq->new({header => $header,
-                                   seq => $seq,
-                                   quals_str => $quals_str});
+    my $fastq_seq = BioUtils::FastqSeq->new({header => $header,
+                                             seq => $seq,
+                                             quals_str => $quals_str});
     
-    my $expected = FastaSeq->new({header => "Seq1 Homo Sapien",
-                                  seq => "ATCG"});
+    my $expected = BioUtils::FastaSeq->new({header => "Seq1 Homo Sapien",
+                                            seq => "ATCG"});
     my $fasta_seq;
     lives_ok( sub{ $fasta_seq = $fastq_seq->to_FastaSeq() },
              "to_FastqSeq - lives" );
@@ -84,7 +87,9 @@ throws_ok( sub { $fastq_seq->get_qual_at(4) }, qr/Index out of bounds/, "get_qua
 
 
 # Create a sequence with an empty header 
-lives_ok( sub { $fastq_seq = FastqSeq->new({ seq => $seq, quals_str => $quals_str }) },
+lives_ok( sub { $fastq_seq = BioUtils::FastqSeq->new({ seq => $seq,
+                                                       quals_str => $quals_str
+                                                       }) },
           "expected to live" );
 dies_ok( sub { $fastq_seq->get_header() }, "expected to die" );
 throws_ok( sub { $fastq_seq->get_header() }, 'MyX::Generic::Undef::Attribute', "get_header() - caught" );
@@ -94,15 +99,15 @@ throws_ok( sub { $fastq_seq->get_id() }, qr/Undefined header/, "get_id() - caugh
 
 
 # Test the _encoding_to_dec method
-is( FastqSeq::_encoding_to_dec('I'), 40, "_encoding_to_dec(I)" );
-is( FastqSeq::_encoding_to_dec('J'), 41, "_encoding_to_dec(J)" );
-is( FastqSeq::_encoding_to_dec('!'), 0, "_encoding_to_dec(!)" );
+is( BioUtils::FastqSeq::_encoding_to_dec('I'), 40, "_encoding_to_dec(I)" );
+is( BioUtils::FastqSeq::_encoding_to_dec('J'), 41, "_encoding_to_dec(J)" );
+is( BioUtils::FastqSeq::_encoding_to_dec('!'), 0, "_encoding_to_dec(!)" );
 # I still need to test out of range query errors
 
 # Test the _dec_to_encoding method
-is( FastqSeq::_dec_to_encoding(40), 'I', "_dec_to_encoding(40)" );
-is( FastqSeq::_dec_to_encoding(41), 'J', "_dec_to_encoding(41)" );
-is( FastqSeq::_dec_to_encoding(0), '!', "_dec_to_encoding(0)" );
+is( BioUtils::FastqSeq::_dec_to_encoding(40), 'I', "_dec_to_encoding(40)" );
+is( BioUtils::FastqSeq::_dec_to_encoding(41), 'J', "_dec_to_encoding(41)" );
+is( BioUtils::FastqSeq::_dec_to_encoding(0), '!', "_dec_to_encoding(0)" );
 # I still need to test out of range query errors
 
 

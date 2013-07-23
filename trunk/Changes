@@ -1,5 +1,9 @@
 Revision history for BioUtils
 
+1.0.5  	Tues Jul 23, 2013
+	- Added set_header method in FastqSeq.pm
+	- Bug fixes in FastqSeq.t
+
 1.0.4  Fri Jun 14, 2013
        - Changed fastq filter output file name conventions.  Previously they
          were named filtered and unfiltered.  They are now HQ (high quality)
