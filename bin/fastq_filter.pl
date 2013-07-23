@@ -5,9 +5,9 @@
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('1.0.4');
+use version; our $VERSION = qv('1.0.5');
 
-use BioUtils::QC::FastqFilter 1.0.4;
+use BioUtils::QC::FastqFilter 1.0.5;
 use Getopt::Long;
 use Carp qw(cluck);
 use Pod::Usage;
@@ -161,7 +161,7 @@ fastq_filter - Filter FASTQ sequences
 
 =head1 VERSION
 
-This documentation refers to fastq_filter.pl version 1.0.4
+This documentation refers to fastq_filter.pl version 1.0.5
 
 
 =head1 USAGE
@@ -277,7 +277,7 @@ version
 Getopt::Long
 Carp qw(cluck)
 Pod::Usage
-BioUtils::QC::FastqFilter 1.0.4
+BioUtils::QC::FastqFilter 1.0.5
 
 
 =head1 AUTHOR

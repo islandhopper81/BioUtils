@@ -7,10 +7,10 @@ use Class::Std::Utils;
 use List::MoreUtils qw(any);
 use Readonly;
 use Carp qw(croak);
-use MyX::Generic 1.0.4;
-use BioUtils::FastaSeq 1.0.4;
+use MyX::Generic 1.0.5;
+use BioUtils::FastaSeq 1.0.5;
 
-use version; our $VERSION = qv('1.0.4');
+use version; our $VERSION = qv('1.0.5');
 
 {
     Readonly my $ASCII_OFFSET => 33;
@@ -29,6 +29,7 @@ use version; our $VERSION = qv('1.0.4');
     sub get_quals_str;
     sub get_quals_aref;
     sub get_qual_at;
+    sub set_header;
     sub set_seq;
     sub set_quals_str;
     sub to_FastaSeq;
@@ -130,6 +131,12 @@ use version; our $VERSION = qv('1.0.4');
         
         return $qual;
     }
+    
+    sub set_header($) {
+        my ($self, $header) = @_;
+        $header_of{ident $self} = $header;
+        return 1;
+    }
         
     sub set_seq($) {
         my ($self, $seq) = @_;
@@ -194,7 +201,7 @@ FastqSeq - A data structure to store a sequence string and quality string
 
 =head1 VERSION
 
-This documentation refers to FastqSeq version 1.0.4.
+This documentation refers to FastqSeq version 1.0.5.
 
 =head1 Included Modules
 
@@ -226,6 +233,7 @@ This documentation refers to FastqSeq version 1.0.4.
     $fastq_seq->set_quals_encoding('L')
     $fastq_seq->set_seq($new_seq);
     $fastq_seq->set_quals($new_quals);
+    $fastq_seq->set_header("seq1");
     
     # convert to FastaSeq Object
     my $fasta_seq = $fastq_seq->to_FastaSeq()
@@ -256,6 +264,7 @@ values can be accessed as a string or array reference.
     get_quals_str
     get_quals_aref
     get_qual_at
+    set_header
     set_seq
     set_quals_str
     to_FastaSeq
@@ -350,6 +359,17 @@ values can be accessed as a string or array reference.
     Args: -index => index of quality value to return
     Throws: NA
     Comments: Return value is in decimal format.
+    See Also: NA
+
+=head2 set_header
+
+    Title: set_header
+    Usage: $my_fastq_seq->set_header("seq1");
+    Function: Sets the header value in the FastqSeq object
+    Returns: 1 on successful completion
+    Args: -seq => a string representing the header
+    Throws: NA
+    Comments: NA
     See Also: NA
    
 =head2 set_seq
