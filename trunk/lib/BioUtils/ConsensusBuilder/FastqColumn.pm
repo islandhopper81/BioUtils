@@ -9,7 +9,7 @@ use warnings;
 use Class::Std::Utils;
 use Carp;
 use Readonly;
-use version; our $VERSION = qv('1.0.5');
+use version; our $VERSION = qv('1.0.6');
 use BioUtils::Codec::QualityScores qw( int_to_illumina_1_8 illumina_1_8_to_int);
 
 {
@@ -34,6 +34,7 @@ use BioUtils::Codec::QualityScores qw( int_to_illumina_1_8 illumina_1_8_to_int);
     
     # Others #
     sub _resolveTie;
+    sub clear_col;
     
 
     ###############
@@ -328,6 +329,28 @@ use BioUtils::Codec::QualityScores qw( int_to_illumina_1_8 illumina_1_8_to_int);
         
         return $newTopBases;
     }
+    
+    sub clear_col {
+        my ($self) = @_;
+        
+        my $bases_href = $bases_of{ident $self};
+        $bases_href->{A}{count} = 0;
+        $bases_href->{T}{count} = 0;
+        $bases_href->{C}{count} = 0;
+        $bases_href->{G}{count} = 0;
+        $bases_href->{N}{count} = 0;
+        $bases_href->{dash}{count} = 0;
+        
+        # clears memory used by qual arrays
+        undef($bases_href->{A}{quals});
+        undef($bases_href->{T}{quals});
+        undef($bases_href->{C}{quals});
+        undef($bases_href->{G}{quals});
+        undef($bases_href->{N}{quals});
+        undef($bases_href->{dash}{quals});
+        
+        return 1;
+    }
 }
 
 1;
@@ -343,7 +366,7 @@ also repsonsible for calling the consensus of that column.
 
 =head1 VERSION
 
-This documentation refers to FastqColumn version 1.0.5.
+This documentation refers to FastqColumn version 1.0.6.
 
 =head1 Included Modules
 
@@ -533,6 +556,17 @@ IUPAC code a method (getIupacCode) has been provided with FastqColumn.
     Args: -base => one base
     Throws: NA
     Comments: Mostly used for testing purposes
+    See Also: NA
+    
+=head2 clear_col
+
+    Title: clear_col
+    Usage: $my_fastq_con->clear_col();
+    Function: Clears data in col and resets the values
+    Returns: 1 on success
+    Args: NA
+    Throws: NA
+    Comments: NA
     See Also: NA
 
 

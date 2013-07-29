@@ -3,11 +3,11 @@ package BioUtils::ConsensusBuilder::ConsensusBuilder;
 use strict;
 use warnings;
 
-use BioUtils::ConsensusBuilder::FastqColumn 1.0.5;
-use BioUtils::ConsensusBuilder::FastqConsensus 1.0.5;
+use BioUtils::ConsensusBuilder::FastqColumn 1.0.6;
+use BioUtils::ConsensusBuilder::FastqConsensus 1.0.6;
 use BioUtils::Codec::QualityScores qw( int_to_illumina_1_8 illumina_1_8_to_int);
 use Carp qw(carp croak);
-use version; our $VERSION = qv('1.0.5');
+use version; our $VERSION = qv('1.0.6');
 use Exporter qw( import );
 our @EXPORT_OK = qw( buildFromClustalwFile buildFromSimpleAlign );
 
@@ -42,18 +42,21 @@ sub buildFromClustalwFile($$) {
     
     my $conStr = q{};
     my $con_quals_str = q{};
+	
+	# create some variables to use when building a consensus
+	my $col= BioUtils::ConsensusBuilder::FastqColumn->new();
+	my $base;
+	my $qual;
     
     for (my $i = 0; $i < $alignmentLen; $i++ ) {
-        my $col = BioUtils::ConsensusBuilder::FastqColumn->new();
-        
         foreach my $id ( keys %{$alignedSeqs_href} ) {
-            my $base = $alignedSeqs_href->{$id}->[$i];
+            $base = $alignedSeqs_href->{$id}->[$i];
             if ( $base eq "-" ) {
                 $dashCount{$id}++;
                 $col->addBase($base, int_to_illumina_1_8(0));  # adding a dash
             }
             else {
-                my $qual = $quals_href->{$id}->[$i - $dashCount{$id}];
+                $qual = $quals_href->{$id}->[$i - $dashCount{$id}];
                 $col->addBase($base, $qual);
             }
         }
@@ -62,6 +65,11 @@ sub buildFromClustalwFile($$) {
 			$conStr .= $conBase;
 			$con_quals_str .= $conQual;
 		}
+		
+		# clear the variables
+		$col->clear_col();
+		$base = '';
+		$qual = '';
     }
     
     my $fastqConsensus = BioUtils::ConsensusBuilder::FastqConsensus->new({
@@ -203,7 +211,7 @@ from a multiple sequence alignment (MSA)
 
 =head1 VERSION
 
-This documentation refers to ConsensusBuilder version 1.0.5.
+This documentation refers to ConsensusBuilder version 1.0.6.
 
 =head1 Included Modules
 
