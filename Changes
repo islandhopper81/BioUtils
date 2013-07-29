@@ -1,5 +1,10 @@
 Revision history for BioUtils
 
+1.0.6	Mon Jul 29, 2013
+	- Fixed a memory bug in the consensus building algorithm.  Previously,
+	  large numbers of consensus building calls required >20G of memory.
+	  Now comparable samples can be run in < 1G of memory.
+
 1.0.5  	Tues Jul 23, 2013
 	- Added set_header method in FastqSeq.pm
 	- Bug fixes in FastqSeq.t
