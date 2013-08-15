@@ -3,7 +3,7 @@ package BioUtils::QC::FastqFilter;
 use warnings;
 use strict;
 
-use version; our $VERSION = qv('1.0.6');
+use version; our $VERSION = qv('1.0.7');
 
 use Class::Std::Utils;
 use Scalar::Util qw(looks_like_number);
@@ -15,7 +15,7 @@ use Data::Dumper qw(Dumper);
 use Readonly;
 use Cwd;
 use File::Basename;
-use BioUtils::FastqIO 1.0.6;
+use BioUtils::FastqIO 1.0.7;
 use BioUtils::Codec::QualityScores qw(illumina_1_8_to_int);
 use MyX::Generic;
 
@@ -27,6 +27,7 @@ use MyX::Generic;
             [min_len => ],
             [min_avg_qual => ],
             [min_base_qual => ],
+            [min_c_score => ],
             [allow_gaps => ],
             [allow_ambig_bases => ],
             [verbose => ],
@@ -40,6 +41,7 @@ use MyX::Generic;
     my %min_len_of;
     my %min_avg_qual_of;
     my %min_base_qual_of;
+    my %min_c_score_of;
     my %allow_gaps_of;
     my %allow_ambig_bases_of;
     my %verbose_of;
@@ -51,6 +53,7 @@ use MyX::Generic;
     sub set_min_len;
     sub set_min_avg_qual;
     sub set_min_base_qual;
+    sub set_min_c_score;
     sub set_allow_gaps;
     sub set_allow_ambig_bases;
     sub set_verbose;
@@ -62,6 +65,7 @@ use MyX::Generic;
     sub get_min_len;
     sub get_min_avg_qual;
     sub get_min_base_qual;
+    sub get_min_c_score;
     sub get_allow_gaps;
     sub get_allow_ambig_bases;
     sub get_verbose;
@@ -76,6 +80,7 @@ use MyX::Generic;
     sub _too_short;
     sub _below_avg_qual;
     sub _below_base_qual;
+    sub _below_min_c_score;
     sub _has_gaps;
     sub _has_ambig_bases;
     sub _get_file_prefix;
@@ -113,9 +118,9 @@ use MyX::Generic;
     
         # Build the FASTQIO objects
         my ($in, $out, $LQ) = _make_io_objs($input_file,
-                                                      $out_dir,
-                                                      $file_prefix,
-                                                      $verbose); 
+                                            $out_dir,
+                                            $file_prefix,
+                                            $verbose); 
         
         # Read in the sequences from $input_file
         # AND run each filter test
@@ -123,15 +128,17 @@ use MyX::Generic;
             
             my @diagnostics = ();
             my $seq_id = $fastq_seq->get_id();
+            my $seq_header = $fastq_seq->get_header();
             my $seq_str = $fastq_seq->get_seq();
             my $quals_str = $fastq_seq->get_quals_str();
             
             # run tests
             my $LQ_flag = $self->_test_seq(\@diagnostics,
-                                               $seq_id,
-                                               $seq_str,
-                                               $quals_str,
-                                               $verbose);
+                                            $seq_id,
+                                            $seq_header,
+                                            $seq_str,
+                                            $quals_str,
+                                            $verbose);
             
             
             ### All the tests are done.  Now do some output.
@@ -201,6 +208,7 @@ use MyX::Generic;
             
             my @diagnostics = ();
             my $seq_id = $fwd_seq->get_id() . "-" . $rev_seq->get_id();
+            my $seq_header = $fwd_seq->get_header() . " | " . $rev_seq->get_header();
             my $seq_str = $fwd_seq->get_seq() . $rev_seq->get_seq();
             my $quals_str = $fwd_seq->get_quals_str() .
                             $rev_seq->get_quals_str();
@@ -208,6 +216,7 @@ use MyX::Generic;
             ### run tests ###
             my $LQ_flag = $self->_test_seq(\@diagnostics,
                                                $seq_id,
+                                               $seq_header,
                                                $seq_str,
                                                $quals_str,
                                                $verbose);
@@ -347,7 +356,7 @@ use MyX::Generic;
     }
     
     sub _test_seq {
-        my ($self, $diag_aref, $id, $seq_str, $quals_str, $verbose) = @_;
+        my ($self, $diag_aref, $id, $header, $seq_str, $quals_str, $verbose) = @_;
         
         # A boolean to keep track if the sequence needs to be filtered out
         # LQ stands for low quality
@@ -404,6 +413,18 @@ use MyX::Generic;
             push @$diag_aref, 0;
         }
         
+        # Test min c-score
+        if ( _below_min_c_score($self->get_min_c_score(), $header) ) {
+            return 1 if ( ! $verbose);
+            
+            # verbose operations
+            push @$diag_aref, 1;
+            $LQ_flag = 1;
+        }
+        else {
+            push @$diag_aref, 0;
+        }
+        
         # Test that there are no gaps
         if ( _has_gaps($seq_str) and ! $self->get_allow_gaps() ) {
             return 1 if ( ! $verbose );
@@ -441,6 +462,7 @@ use MyX::Generic;
         $self->set_min_len($arg_href->{min_len});
         $self->set_min_avg_qual($arg_href->{min_avg_qual});
         $self->set_min_base_qual($arg_href->{min_base_qual});
+        $self->set_min_c_score($arg_href->{min_c_score});
         $self->set_allow_gaps($arg_href->{allow_gaps});
         $self->set_allow_ambig_bases($arg_href->{allow_ambig_bases});
         $self->set_verbose($arg_href->{verbose});
@@ -480,6 +502,31 @@ use MyX::Generic;
         }
         
         return 0;
+    }
+    
+    sub _below_min_c_score {
+        my ($min_c_score, $header) = @_;
+        
+        if ( $header =~ m/\|/ ) {
+            # this means it is a pair
+            my @parts = split /\|/, $header;
+            foreach (@parts) {
+                if ( $_ =~ m/c_score\s*=\s*(\d+\.*\d*)/ ) {
+                    if ( $1 < $min_c_score ) {
+                        return 1;  # below the min c_score
+                    }
+                }
+            }
+        }
+        else {
+            if ( $header =~ m/c_score\s*=\s*(\d+\.*\d*)/ ) {
+                if ( $1 < $min_c_score ) {
+                    return 1;  # below the min c_score
+                }
+            }
+        }
+        
+        return 0;  # c_score is either okay or not present
     }
     
     sub _has_gaps {
@@ -544,7 +591,7 @@ use MyX::Generic;
         open my $fh, '>', $file
             or croak("Cannot open file: $file");
         
-        print $fh "#seq_id\tlength\taverage_qual\tbase_qual\tgaps\tambiguous_base\n";
+        print $fh "#seq_id\tlength\taverage_qual\tbase_qual\tc_score\tgaps\tambiguous_base\n";
         
         foreach my $vals ( @{$aref} ) {
             #my $line = (join "\t", @{$vals}) . "\n";
@@ -632,6 +679,23 @@ use MyX::Generic;
         }
         
         $min_base_qual_of{ident $self} = $min_base_qual;
+        
+        return 1;
+    }
+    
+    sub set_min_c_score {
+        my ($self, $min_c_score) = @_;
+        
+        # DEFAULT = 0
+        if ( ! defined $min_c_score ) {
+            $min_c_score = 0;
+        }
+        
+        if ( $min_c_score < 0 ) {
+            croak("min_c_score must be > 0");
+        }
+        
+        $min_c_score_of{ident $self} = $min_c_score;
         
         return 1;
     }
@@ -732,6 +796,11 @@ use MyX::Generic;
         return $min_base_qual_of{ident $self};
     }
     
+    sub get_min_c_score {
+        my ($self) = @_;
+        return $min_c_score_of{ident $self};
+    }
+    
     sub get_allow_gaps {
         my ($self) = @_;
         return $allow_gaps_of{ident $self};
@@ -777,7 +846,7 @@ BioUtils::QC::FastqFilter - Filters seqs in a Fastq file based on quality
 
 =head1 VERSION
 
-This document describes BioUtils::QC::FastqFilter version 1.0.6
+This document describes BioUtils::QC::FastqFilter version 1.0.7
 
 
 =head1 SYNOPSIS
@@ -791,6 +860,7 @@ This document describes BioUtils::QC::FastqFilter version 1.0.6
                     [min_len => $min_len],
                     [min_avg_qual => $min_avg_qual],
                     [min_base_qual => $min_base_qual],
+                    [min_c_score => $min_c_score],
                     [allow_gaps => $allow_gaps],
                     [allow_ambig_bases => $allow_ambig],
                     [verbose => 0],
@@ -828,6 +898,7 @@ not possible to apply filters baesed on individual FWD or REV reads.
     set_min_len
     set_min_avg_qual
     set_min_base_qual
+    set_min_c_score
     set_allow_gaps
     set_allow_ambig_bases
     set_verbose
@@ -839,6 +910,7 @@ not possible to apply filters baesed on individual FWD or REV reads.
     get_min_len
     get_min_avg_qual
     get_min_base_qual
+    get_min_c_score
     get_allow_gaps
     get_allow_ambig_bases
     get_verbose
@@ -851,6 +923,7 @@ not possible to apply filters baesed on individual FWD or REV reads.
     _too_short
     _below_avg_qual
     _below_base_qual
+    _below_min_c_score
     _has_gaps
     _has_ambig_bases
     _get_file_prefix
@@ -921,6 +994,10 @@ Croaks when setting min_avg_qual to less than 0
 
 Croaks when setting min_base_qual to less than 0
 
+=item C<< min_c_score must be > 0 >>
+
+Croaks when setting min_c_score to less than 0
+
 =item C<< allow_gaps must be 0 or 1 >>
 
 Croaks when setting allow_gaps to something other than 0 or 1
@@ -959,7 +1036,7 @@ will fail if 'grep' cannot be found as a system command.
     Readonly
     Cwd
     File::Basename
-    BioUtils::FastqIO 1.0.6
+    BioUtils::FastqIO 1.0.7
     BioUtils::Codec::QualityScores qw(illumina_1_8_to_int)
     MyX::Generic
 
@@ -981,6 +1058,7 @@ will fail if 'grep' cannot be found as a system command.
                             [min_len => $min_len],
                             [min_avg_qual => $min_avg_qual],
                             [min_base_qual => $min_base_qual],
+                            [min_c_score => $min_c_score],
                             [allow_gaps => $allow_gaps],
                             [allow_ambig_bases => $allow_ambig],
                             [verbose => 0],
@@ -993,6 +1071,7 @@ will fail if 'grep' cannot be found as a system command.
           -min_len => min length of seqs to keep
           -min_avg_qual => min average quality value of seqs to keep
           -min_base_qual => min quality value for each base of seqs to keep
+          -min_c_score => min consensus score.  See below for details
           -allow_gaps => keep seqs with gaps (0 == NO, 1 == YES)
           -allow_ambig_bases => keep seqs with ambiguous bases
                                 (0 == NO, 1 == YES)
@@ -1149,6 +1228,22 @@ will fail if 'grep' cannot be found as a system command.
 	Comments: NA
 	See Also: NA
     
+=head2 _below_min_c_score
+
+	Title: _below_min_c_score
+	Usage: _below_min_c_score($min_c_score, $header);
+	Function: Determines if the sequence is above the minimum c_score in header
+	Returns: Bool
+	Args: -min_c_score => the minimum allowed c_score
+          -header => the header which may contain the c_score value
+	Throws: NA
+	Comments: A c_score is a metric for grading a consensus sequnece.  It says
+              how similar the sequences that were used to build the consensus
+              are to each other.  It can have values between 0 and 40 because it
+              is based on quality scores.  If a fastq sequence has a c_score it
+              should be declared in the header using this format: c_score=40.0.
+	See Also: NA
+    
 =head2 _has_gaps
 
 	Title: _has_gaps
@@ -1264,6 +1359,17 @@ will fail if 'grep' cannot be found as a system command.
 	Comments: NA
 	See Also: NA
     
+=head2 set_min_c_score
+
+	Title: set_min_c_score
+	Usage: $filter->set_min_c_score($min_c_score);
+	Function: Sets the min c_score
+	Returns: 1 on successful completion
+	Args: -min_c_score => int of minimum c_score
+	Throws: croak("min_c_score must be > 0")
+	Comments: NA
+	See Also: _below_min_c_score
+    
 =head2 set_allow_gaps
 
 	Title: set_allow_gaps
@@ -1358,6 +1464,17 @@ will fail if 'grep' cannot be found as a system command.
 	Usage: my $min_base_qual = $filter->get_min_base_qual();
 	Function: Gets the min_base_qual attribute value
 	Returns: Int
+	Args: NA
+	Throws: NA
+	Comments: NA
+	See Also: NA
+    
+=head2 get_min_c_score
+
+	Title: get_min_c_score
+	Usage: my $min_c_score = $filter->get_min_c_score();
+	Function: Gets the min_c_score attribute value
+	Returns: Digit
 	Args: NA
 	Throws: NA
 	Comments: NA

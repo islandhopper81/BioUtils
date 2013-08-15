@@ -1,10 +1,11 @@
-use Test::More tests => 11;
+use Test::More tests => 12;
 
 BEGIN {
 use_ok( 'BioUtils::ConsensusBuilder::ConsensusBuilder' );
 use_ok( 'BioUtils::ConsensusBuilder::FastqColumn' );
 use_ok( 'BioUtils::ConsensusBuilder::FastqConsensus' );
 use_ok( 'BioUtils::Codec::QualityScores', qw(int_to_illumina_1_8 illumina_1_8_to_int) );
+use_ok( 'BioUtils::Codec::IUPAC', qw(nuc_str_to_iupac iupac_to_nuc_str) );
 use_ok( 'BioUtils::FastaSeq' );
 use_ok( 'BioUtils::FastaIO' );
 use_ok( 'BioUtils::FastqSeq' );
@@ -19,6 +20,7 @@ diag( "Testing BioUtils::ConsensusBuilder::ConsensusBuilder $BioUtils::Consensus
 diag( "Testing BioUtils::ConsensusBuilder::FastqColumn $BioUtils::ConsensusBuilder::FastqColumn::VERSION" );
 diag( "Testing BioUtils::ConsensusBuilder::FastqConsensus $BioUtils::ConsensusBuilder::FastqConsensus::VERSION" );
 diag( "Testing BioUtils::Codec::QualityScores $BioUtils::Codec::QualityScores::VERSION" );
+diag( "Testing BioUtils::Codec::IUPAC $BioUtils::Codec::IUPAC::VERSION" );
 diag( "Testing BioUtils::FastaSeq $BioUtils::FastaSeq::VERSION" );
 diag( "Testing BioUtils::FastaIO $BioUtils::FastaIO::VERSION" );
 diag( "Testing BioUtils::FastqSeq $BioUtils::FastqSeq::VERSION" );

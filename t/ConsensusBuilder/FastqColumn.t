@@ -1,6 +1,6 @@
 
 use BioUtils::ConsensusBuilder::FastqColumn;
-use Test::More tests => 61;
+use Test::More tests => 47;
 use BioUtils::Codec::QualityScores qw( int_to_illumina_1_8 illumina_1_8_to_int);
 
 BEGIN { use_ok( 'BioUtils::ConsensusBuilder::FastqColumn'); }
@@ -45,23 +45,6 @@ is( $fc->_getSortedTopBases("TG"), "GT", "_getSortedTopBases(TG)" );
 is( $fc->_getSortedTopBases("AG"), "AG", "_getSortedTopBases(AG)" );
 is( $fc->_getSortedTopBases("ca"), "AC", "_getSortedTopBases(CA)" );
 is( $fc->_getSortedTopBases("TGCA"), "ACGT", "_getSortedTopBases(TGCA)" );
-
-
-# Test the getIupacCode function
-is( $fc->getIupacCode("A"), "A", "getIupacCode(A)" );
-is( $fc->getIupacCode("T"), "T", "getIupacCode(T)" );
-is( $fc->getIupacCode("C"), "C", "getIupacCode(C)" );
-is( $fc->getIupacCode("G"), "G", "getIupacCode(G)" );
-is( $fc->getIupacCode("AG"), "R", "getIupacCode(AG)" );
-is( $fc->getIupacCode("CT"), "Y", "getIupacCode(CT)" );
-is( $fc->getIupacCode("GC"), "S", "getIupacCode(GC)" );
-is( $fc->getIupacCode("AT"), "W", "getIupacCode(AT)" );
-is( $fc->getIupacCode("GT"), "K", "getIupacCode(GT)" );
-is( $fc->getIupacCode("AC"), "M", "getIupacCode(AC)" );
-is( $fc->getIupacCode("AGT"), "D", "getIupacCode(AGT)" );
-is( $fc->getIupacCode("ACT"), "H", "getIupacCode(ACT)" );
-is( $fc->getIupacCode("ACG"), "V", "getIupacCode(ACG)" );
-is( $fc->getIupacCode("CGT"), "B", "getIupacCode(CGT)" );
 
 
 # Test getConBaseAndQual() function

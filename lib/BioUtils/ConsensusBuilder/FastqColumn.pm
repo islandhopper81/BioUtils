@@ -9,8 +9,9 @@ use warnings;
 use Class::Std::Utils;
 use Carp;
 use Readonly;
-use version; our $VERSION = qv('1.0.6');
+use version; our $VERSION = qv('1.0.7');
 use BioUtils::Codec::QualityScores qw( int_to_illumina_1_8 illumina_1_8_to_int);
+use BioUtils::Codec::IUPAC qw( nuc_str_to_iupac iupac_to_nuc_str);
 
 {
     Readonly my $NEW_USAGE => q{ new() };
@@ -26,9 +27,8 @@ use BioUtils::Codec::QualityScores qw( int_to_illumina_1_8 illumina_1_8_to_int);
     sub _by_probability;
     sub _base_probability;
     sub _qual_to_prob;
-    sub getIupacCode;
-    sub _getMeanQual;
     sub _getSortedTopBases;
+    sub _getMeanQual;
     sub getBaseCount;
     sub getBaseQuals;
     
@@ -144,7 +144,7 @@ use BioUtils::Codec::QualityScores qw( int_to_illumina_1_8 illumina_1_8_to_int);
             }
             else {
                 $meanQual = $self->_getMeanQual($topBases);
-                $topBases = $self->getIupacCode($topBases);
+                $topBases = nuc_str_to_iupac($topBases);
             }
         }
         
@@ -196,28 +196,6 @@ use BioUtils::Codec::QualityScores qw( int_to_illumina_1_8 illumina_1_8_to_int);
         my ($qual) = @_;
         
         return 10**( -$qual / 10 );
-    }
-    
-    sub getIupacCode($) {
-        my ($self, $topBases) = @_;
-        
-        my $sorted = $self->_getSortedTopBases($topBases);
-        
-        if ( $sorted eq "A" ) { return "A"; }
-        elsif ( $sorted eq "C" ) { return "C"; }
-        elsif ( $sorted eq "G" ) { return "G"; }
-        elsif ( $sorted eq "T" ) { return "T"; }
-        elsif ( $sorted eq "AG" ) { return "R"; }
-        elsif ( $sorted eq "CT" ) { return "Y"; }
-        elsif ( $sorted eq "CG" ) { return "S"; }
-        elsif ( $sorted eq "AT" ) { return "W"; }
-        elsif ( $sorted eq "GT" ) { return "K"; }
-        elsif ( $sorted eq "AC" ) { return "M"; }
-        elsif ( $sorted eq "CGT" ) { return "B"; }
-        elsif ( $sorted eq "AGT" ) { return "D"; }
-        elsif ( $sorted eq "ACT" ) { return "H"; }
-        elsif ( $sorted eq "ACG" ) { return "V"; }
-        else { return "N"; }
     }
     
     sub _getSortedTopBases($) {
@@ -366,7 +344,7 @@ also repsonsible for calling the consensus of that column.
 
 =head1 VERSION
 
-This documentation refers to FastqColumn version 1.0.6.
+This documentation refers to FastqColumn version 1.0.7.
 
 =head1 Included Modules
 
@@ -383,8 +361,6 @@ This documentation refers to FastqColumn version 1.0.6.
     
     $my_fastq_col->addBase($base, $qual);
     my ($topBases, $meanQual) = $my_fastq_col->getConBaseAndQual();
-    $my_fastq_col->getIupacCode($topBases);
-
     
 
 =head1 DESCRIPTION
@@ -434,8 +410,7 @@ In this case the algorithm will return the string AT with an average quality
 score of all the top bases (so in this case 35).  The program using this
 FastqColumn will have to decide what to do at that point.  Should it randomly
 pick one of the top bases?  Should it simply pick the first top base?  Should it
-use an IUPAC coding?  In the event that the calling program wants to use an
-IUPAC code a method (getIupacCode) has been provided with FastqColumn.
+use an IUPAC coding? 
 
 =head1 METHODS
 
@@ -444,12 +419,15 @@ IUPAC code a method (getIupacCode) has been provided with FastqColumn.
     new
     addBase
     getConBaseAndQual
-    getIupacCode
-    _getMeanQual
+    _by_probability
+    _base_probability
+    _qual_to_prob
     _getSortedTopBases
-    _resolveTie
+    _getMeanQual
     getBaseCount
     getBaseQuals
+    _resolveTie
+    clear_col
     
 =back
 
@@ -490,28 +468,43 @@ IUPAC code a method (getIupacCode) has been provided with FastqColumn.
               See the DESCRIPTION section for detail on how a consensus bases
               and its quality score are calculated.
     See Also: DESCRIPTION section
+    
+=head2 _by_probability
 
-=head2 getIupacCode
-
-    Title: getIupacCode
-    Usage: $my_fastq_con->getIupacCode($topBases);
-    Function: Gets the IUPAC code for a string of bases
-    Returns: String
-    Args: -topBases => a string of bases
+    Title: _by_probability
+    Usage: $my_fastq_col->_by_probability();
+    Function: Gets the consensus base and max probability of that base
+    Returns: ($max_base, $max_prob)
+    Args: None
     Throws: NA
-    Comments: NA
+    Comments: This was my attempt to get the consensus base using the quality
+              scores as probabilities.  I still recommend using the
+              getConBaseAndQual method
+    See Also: NA
+    
+=head2 _base_probability
+
+    Title: _base_probability
+    Usage: _base_probability($realized, $observed, $qual);
+    Function: Gets the bases probability based on all it's quality values
+    Returns: Digit
+    Args: -realized => the true base
+          -observed => the observed base
+          -qual => a temp quality value
+    Throws: NA
+    Comments: A helper method for _by_probability
     See Also: NA
 
-=head2 _getMeanQual
+=head2 _qual_to_prob
 
-    Title: _getMeanQual
-    Usage: $my_fastq_con->_getMeanQual($topBases);
-    Function: Gets the mean quality score for a string of bases
-    Returns: int
-    Args: -topBases => a string of bases
+    Title: _qual_to_prob
+    Usage: _qual_to_prob($qual);
+    Function: Calcualtes a probability give a quality score
+    Returns: Digit
+    Args: -qual => a quality value
     Throws: NA
-    Comments: NA
-    See Also: DESCRIPTION section
+    Comments: A helper method for _base_probability
+    See Also: NA
 
 =head2 _getSortedTopBases
 
@@ -525,17 +518,17 @@ IUPAC code a method (getIupacCode) has been provided with FastqColumn.
               to be checked.
     See Also: DESCRIPTION section
 
-=head2 _resolveTie
+=head2 _getMeanQual
 
-    Title: _resolveTie
-    Usage: $my_fastq_con->_resolveTie($topBases);
-    Function: Attempts to resolve a tie between bases using their quality values
-    Returns: String
+    Title: _getMeanQual
+    Usage: $my_fastq_con->_getMeanQual($topBases);
+    Function: Gets the mean quality score for a string of bases
+    Returns: int
     Args: -topBases => a string of bases
     Throws: NA
     Comments: NA
     See Also: DESCRIPTION section
-
+    
 =head2 getBaseCount
 
     Title: getBaseCount
@@ -557,6 +550,17 @@ IUPAC code a method (getIupacCode) has been provided with FastqColumn.
     Throws: NA
     Comments: Mostly used for testing purposes
     See Also: NA
+    
+=head2 _resolveTie
+
+    Title: _resolveTie
+    Usage: $my_fastq_con->_resolveTie($topBases);
+    Function: Attempts to resolve a tie between bases using their quality values
+    Returns: String
+    Args: -topBases => a string of bases
+    Throws: NA
+    Comments: NA
+    See Also: DESCRIPTION section
     
 =head2 clear_col
 

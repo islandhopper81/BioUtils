@@ -5,9 +5,9 @@
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('1.0.6');
+use version; our $VERSION = qv('1.0.7');
 
-use BioUtils::QC::FastqFilter 1.0.6;
+use BioUtils::QC::FastqFilter 1.0.7;
 use Getopt::Long;
 use Carp qw(cluck);
 use Pod::Usage;
@@ -20,6 +20,7 @@ my $output_dir = undef;
 my $min_length = undef;  # Default is keep all short sequences
 my $min_average_qual = 0;  # Defualt is keep all with low average quality
 my $min_base_qual = 0;  # Default is keep all with low base qualities
+my $min_c_score = 0;
 my $allow_gaps = 0;  # Default is don't allow gaps
 my $allow_ambiguous_bases = 0;  # Default is don't allow ambiguous bases
 
@@ -33,6 +34,7 @@ my $options_okay = GetOptions (
     "min_length:i" => \$min_length,
     "min_average_qual:i" => \$min_average_qual,
     "min_base_qual:i" => \$min_base_qual,
+    "min_c_score:i" => \$min_c_score,
     "allow_gaps" => \$allow_gaps,
     "allow_ambiguous_bases" => \$allow_ambiguous_bases,
     
@@ -51,6 +53,7 @@ my $filter_obj = BioUtils::QC::FastqFilter->new({
                         min_len => $min_length,
                         min_avg_qual => $min_average_qual,
                         min_base_qual => $min_base_qual,
+                        min_c_score => $min_c_score,
                         allow_gaps => $allow_gaps,
                         allow_ambig_bases => $allow_ambiguous_bases,
                         verbose => $verbose,
@@ -133,6 +136,14 @@ sub _check_params {
                   );
     }
     
+    # min_c_score must be an int greater than 0
+    if ( $min_c_score < 0 ) {
+        pod2usage(-msg => "--min_c_score must be a positive digit\n",
+                  -exitval => 2,
+                  -verbose => 0,
+                  );
+    }
+    
     # allow_gaps must be either 0 (NO) or 1 (YES)
     if ( ! ($allow_gaps == 0 or $allow_gaps == 1) ) {
         pos2usage(-msg => "--allow_gaps must be 0 (NO) or 1 (YES)\n",
@@ -161,7 +172,7 @@ fastq_filter - Filter FASTQ sequences
 
 =head1 VERSION
 
-This documentation refers to fastq_filter.pl version 1.0.6
+This documentation refers to fastq_filter.pl version 1.0.7
 
 
 =head1 USAGE
@@ -179,6 +190,8 @@ This documentation refers to fastq_filter.pl version 1.0.6
                               DEFAULT = 0
     --min_base_qual         = Minimum single base quality score
                               DEFAULT = 0
+    --min_c_score           = Minimum c-score value if given in header
+                              DEFUALT = 0
     --allow_gaps            = Boolean signalling to retain sequences with gaps
     --allow_ambiguous_bases = Boolean signalling to retain IUPAC coded bases
     --verbose               = Runs all test for each sequence
@@ -214,6 +227,12 @@ the --min_base_qual value will be filtered out of the final set.  IMPORTANT:
 It is important to not that most gaps are scored as a 0.  Therefore you may
 set --min_base_qual to some number greater than 0 and that will effectively
 remove the gaps even if --allow_gaps is set.
+
+=head2 --min_c_score
+
+A c-score is a metric for a consensus sequence.  It signifies the similarity of
+the sequences that were used to create the consensus sequence.  If a sequences
+has a c-score it should be declared in the header as c_score=40.0.
     
 =head2 --allow_gaps
 
@@ -277,7 +296,7 @@ version
 Getopt::Long
 Carp qw(cluck)
 Pod::Usage
-BioUtils::QC::FastqFilter 1.0.6
+BioUtils::QC::FastqFilter 1.0.7
 
 
 =head1 AUTHOR

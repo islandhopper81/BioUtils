@@ -3,11 +3,12 @@ package BioUtils::ConsensusBuilder::ConsensusBuilder;
 use strict;
 use warnings;
 
-use BioUtils::ConsensusBuilder::FastqColumn 1.0.6;
-use BioUtils::ConsensusBuilder::FastqConsensus 1.0.6;
+use BioUtils::ConsensusBuilder::FastqColumn 1.0.7;
+use BioUtils::ConsensusBuilder::FastqConsensus 1.0.7;
 use BioUtils::Codec::QualityScores qw( int_to_illumina_1_8 illumina_1_8_to_int);
+use BioUtils::Codec::IUPAC qw( nuc_str_to_iupac iupac_to_nuc_str);
 use Carp qw(carp croak);
-use version; our $VERSION = qv('1.0.6');
+use version; our $VERSION = qv('1.0.7');
 use Exporter qw( import );
 our @EXPORT_OK = qw( buildFromClustalwFile buildFromSimpleAlign );
 
@@ -47,6 +48,8 @@ sub buildFromClustalwFile($$) {
 	my $col= BioUtils::ConsensusBuilder::FastqColumn->new();
 	my $base;
 	my $qual;
+	my $c_score = 0;
+	my $iupac;
     
     for (my $i = 0; $i < $alignmentLen; $i++ ) {
         foreach my $id ( keys %{$alignedSeqs_href} ) {
@@ -60,10 +63,18 @@ sub buildFromClustalwFile($$) {
                 $col->addBase($base, $qual);
             }
         }
+		
         my ($conBase, $conQual) = $col->getConBaseAndQual();
-        if ( defined $conStr and defined $conBase ) {
+        if ( defined $conStr and length $conBase > 0 ) {
 			$conStr .= $conBase;
 			$con_quals_str .= $conQual;
+			
+			# calcuate the c_score for this column and add to running c_score
+			foreach my $b ( split(//, iupac_to_nuc_str($conBase)) ) {
+				$c_score += illumina_1_8_to_int($conQual) *
+							( $col->getBaseCount($b) /
+							 scalar keys %{$alignedSeqs_href} );
+			}
 		}
 		
 		# clear the variables
@@ -74,7 +85,8 @@ sub buildFromClustalwFile($$) {
     
     my $fastqConsensus = BioUtils::ConsensusBuilder::FastqConsensus->new({
         seq => $conStr,
-        quals_str => $con_quals_str
+        quals_str => $con_quals_str,
+		c_score => ($c_score / $alignmentLen),
 	});
     
     return ($fastqConsensus);
@@ -211,7 +223,7 @@ from a multiple sequence alignment (MSA)
 
 =head1 VERSION
 
-This documentation refers to ConsensusBuilder version 1.0.6.
+This documentation refers to ConsensusBuilder version 1.0.7.
 
 =head1 Included Modules
 

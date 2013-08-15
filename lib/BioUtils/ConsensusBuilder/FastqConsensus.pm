@@ -7,24 +7,29 @@ use Class::Std::Utils;
 use Carp;
 use Readonly;
 use List::MoreUtils qw(any);
-use version; our $VERSION = qv('1.0.6');
-use BioUtils::FastqSeq 1.0.6;
+use Scalar::Util qw(looks_like_number);
+use version; our $VERSION = qv('1.0.7');
+use BioUtils::FastqSeq 1.0.7;
 use base qw(BioUtils::FastqSeq);  # inherits from FastqSeq
 
 {
     Readonly my $NEW_USAGE => q{ new( {seq => ,
                                        quals_str => ,
+                                       [c_score => ,]
                                        } ) };
-                                       
+
+    # Attributes #
+    my %c_score_of;
+    
     ###########
     # Setters #
     ###########
-    
+    sub set_c_score;
     
     ###########
     # Getters #
     ###########
-    
+    sub get_c_score;
     
     ##########
     # Others #
@@ -53,9 +58,43 @@ use base qw(BioUtils::FastqSeq);  # inherits from FastqSeq
         
         # Bless a scalar to instantiate an object
         my $new_obj = $class->SUPER::new($arg_href);
-        my $ident = ident($new_obj);
+        if ( defined $arg_href->{c_score} ) {
+            $new_obj->set_c_score($arg_href->{c_score});
+        }
         
         return $new_obj;
+    }
+    
+    ###########
+    # Setters #
+    ###########
+    sub set_c_score {
+        my ($self, $c_score) = @_;
+        
+        if ( ! looks_like_number($c_score) ) {
+            MyX::Generic::Digit::MustBeDigit->throw(
+                error => 'Must be a digit',
+                value => $c_score,
+            );
+        }
+        
+        $c_score_of{ident $self} = $c_score;
+        return 1;
+    }
+    
+    ###########
+    # Getters #
+    ###########
+    sub get_c_score {
+        my ($self) = @_;
+        
+        if ( ! defined $c_score_of{ident $self} ) {
+            MyX::Generic::Undef::Param->throw(
+                error => 'Getting undefined c_score attribute value',
+            )
+        }
+        
+        return $c_score_of{ident $self};
     }
 }
 
@@ -73,7 +112,7 @@ to avoid confusion
 
 =head1 VERSION
 
-This documentation refers to FastqConsensus version 1.0.6.
+This documentation refers to FastqConsensus version 1.0.7.
 
 =head1 Included Modules
 
@@ -112,6 +151,8 @@ consensus to avoid confusion.  See BioUtils::FastqSeq for details on methods.
 =over
 
     new
+    set_c_score
+    get_c_score
     
 =back
 
@@ -128,9 +169,33 @@ consensus to avoid confusion.  See BioUtils::FastqSeq for details on methods.
     Returns: BioUtils::FastqSeq
     Args: -seq => a string representing the sequence
           -quals_str => a string of quality values in Illimina-1.8+ encoding
-    Throws: MyX::Generic::Undef::Param
+    Throws: MyX::Generic::Digit::MustBeDigit
     Comments: NA
     See Also: BioUtils::FastqSeq
+
+=head2 set_c_score
+    
+    Title: set_c_score
+    Usage: my $fastqCon = set_c_score(40)
+    Function: Sets the consensus score value.  The consensus score is a grade of
+              how similar the sequences making up this consensus are.
+    Returns: 1 on success
+    Args: -c_score => an int or float
+    Throws: MyX::Generic::Undef::Param
+    Comments: NA
+    See Also: NA
+    
+=head2 get_c_score
+    
+    Title: get_c_score
+    Usage: my $c_score = $fastqCon->get_c_score()
+    Function: Gets the consensus score value.  The consensus score is a grade of
+              how similar the sequences making up this consensus are.
+    Returns: Digit
+    Args: NA
+    Throws: MyX::Generic::Undef::Param
+    Comments: NA
+    See Also: NA
 
     
 
