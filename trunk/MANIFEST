@@ -4,6 +4,7 @@ MANIFEST			This list of files
 README
 ignore.txt
 lib/BioUtils/Codec/QualityScores.pm
+lib/BioUtils/Codec/IUPAC.pm
 lib/BioUtils/ConsensusBuilder/ConsensusBuilder.pm
 lib/BioUtils/ConsensusBuilder/FastqColumn.pm
 lib/BioUtils/ConsensusBuilder/FastqConsensus.pm
@@ -22,8 +23,10 @@ t/00.load.t
 t/pod-coverage.t
 t/pod.t
 t/Codec/Codec_QualityScores.t
+t/Codec/Codec_IUPAC.t
 t/ConsensusBuilder/ConsensusBuilder.t
 t/ConsensusBuilder/FastqColumn.t
+t/ConsensusBuilder/FastqConsensus.t
 t/FastaIO.t
 t/FastaSeq.t
 t/FastqIO.t

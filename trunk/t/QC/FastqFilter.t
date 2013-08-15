@@ -1,6 +1,6 @@
 
-use BioUtils::QC::FastqFilter 1.0.6;
-use Test::More tests => 127;
+use BioUtils::QC::FastqFilter 1.0.7;
+use Test::More tests => 134;
 use Test::Exception;
 use Test::Warn;
 use File::Temp qw/ tempfile tempdir /;
@@ -96,6 +96,20 @@ my $filter_g = BioUtils::QC::FastqFilter->new({
     $min_base_qual = 100;
     lives_ok( sub{$filter_g->set_min_base_qual($min_base_qual)},
              "set_min_base_qual(100) - lives");
+}
+
+# test set_min_c_score
+{
+    # negative
+    my $min_c_score = -1;
+    throws_ok( sub{$filter_g->set_min_c_score($min_c_score)},
+              qr/min_c_score must be > 0/,
+              "set_min_c_score(-1) - throws");
+    
+    # all good
+    $min_c_score = 100;
+    lives_ok( sub{$filter_g->set_min_c_score($min_c_score)},
+             "set_min_c_score(100) - lives");
 }
 
 # test _Y_N_translate -- I test this here because I use it in set_allow_gaps
@@ -225,6 +239,7 @@ my $filter_g = BioUtils::QC::FastqFilter->new({
                                      min_len => 100,
                                      min_avg_qual => 30,
                                      min_base_qual => 5,
+                                     min_c_score => 40,
                                      allow_gaps => 1,
                                      allow_ambig_bases => 1,
                                      });
@@ -234,6 +249,7 @@ my $filter_g = BioUtils::QC::FastqFilter->new({
     is( $filter_l->get_min_len(), 100, "get_min_len()" );
     is( $filter_l->get_min_avg_qual(), 30, "get_min_avg_qual()" );
     is( $filter_l->get_min_base_qual(), 5, "get_min_base_qual()" );
+    is( $filter_l->get_min_c_score(), 40, "get_min_c_score()" );
     is( $filter_l->get_allow_gaps(), 1, "get_allow_gaps()" );
     is( $filter_l->get_allow_ambig_bases(), 1, "get_allow_ambig_bases()" );
 }
@@ -269,6 +285,18 @@ my $filter_g = BioUtils::QC::FastqFilter->new({
        "_below_base_qual(20,19)" );
     is( BioUtils::QC::FastqFilter::_below_min_base_qual(20, 21), 0,
        "_below_base_qual(20,21)" );
+}
+
+# test _below_min_c_score
+{
+    is( BioUtils::QC::FastqFilter::_below_min_c_score(20, "c_score=20"), 0,
+       "_below_min_c_score(20, 20)" );
+    is( BioUtils::QC::FastqFilter::_below_min_c_score(20, "c_score=19"), 1,
+       "_below_min_c_score(19, 20)" );
+    is( BioUtils::QC::FastqFilter::_below_min_c_score(20, "c_score=21"), 0,
+       "_below_min_c_score(20, 21)" );
+    is( BioUtils::QC::FastqFilter::_below_min_c_score(20, "no value"), 0,
+       "below_min_c_score(20, no value)" );
 }
 
 # test _has_gaps
@@ -360,22 +388,22 @@ my $filter_g = BioUtils::QC::FastqFilter->new({
     my $aref = ();
     
     # test a good sequence
-    is( $filter_l->_test_seq($aref, "seq1", "ATCG", "IIII", 1),
+    is( $filter_l->_test_seq($aref, "seq1", "seq1", "ATCG", "IIII", 1),
        0,
        "_test_seq -- good seq");
     
     # test a sequence with below avg qual score
-    is( $filter_l->_test_seq($aref, "seq1", "ATCG", "++++", 1),
+    is( $filter_l->_test_seq($aref, "seq1", "seq1", "ATCG", "++++", 1),
        1,
        "_test_seq -- below avg qual");
     
     # test sequences with below min qual score
-    is( $filter_l->_test_seq($aref, "seq1", "ATCG", "III#", 1),
+    is( $filter_l->_test_seq($aref, "seq1", "seq1", "ATCG", "III#", 1),
        1,
        "_test_seq -- below min qual");
     
     # test sequences with below min len
-    is( $filter_l->_test_seq($aref, "seq1", "ATC", "III", 1),
+    is( $filter_l->_test_seq($aref, "seq1", "seq1", "ATC", "III", 1),
        1,
        "_test_seq -- below min len");
 

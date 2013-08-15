@@ -7,7 +7,7 @@ use BioUtils::Codec::QualityScores qw( int_to_illumina_1_8 illumina_1_8_to_int )
 use Data::Dumper qw( Dumper );
 use File::Temp qw{tempfile};
 
-use Test::More tests => 6;
+use Test::More tests => 7;
 
 BEGIN { use_ok( 'BioUtils::ConsensusBuilder::ConsensusBuilder'); }
 
@@ -33,7 +33,7 @@ $qualsHash{'Seq3'} = \@seq3;
 my $consensus = BioUtils::ConsensusBuilder::ConsensusBuilder::buildFromClustalwFile($file1, \%qualsHash);
 is( $consensus->get_seq(), "AATTCCGG", "buildConFromFile() -- AATTCCGG" );
 is( $consensus->get_quals_aref->[1], int_to_illumina_1_8(40), "buildConFromFile() -- conQuals[0]" );
-
+is( $consensus->get_c_score(), (40*8)/8, "buildConFromFile() -- get_c_score()" );
 
 ### Create a second temporary file representing a clustalw output file
 my ($fh2, $file2) = tempfile();
@@ -61,7 +61,6 @@ $qualsHash{'Seq4'} = \@seq4;
 $consensus = BioUtils::ConsensusBuilder::ConsensusBuilder::buildFromClustalwFile($file2, \%qualsHash);
 is( $consensus->get_seq(), "AATTCCGK", "buildConFromFile() -- AATTCCGG" );
 is( $consensus->get_quals_aref->[0], int_to_illumina_1_8(36), "buildConFromFile() -- conQuals[0]" );
-
 
 ### Test this pair of full length sequences using the clustalw approach.
 # They were giving me problems.
