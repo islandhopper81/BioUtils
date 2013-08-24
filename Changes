@@ -1,6 +1,7 @@
 Revision history for BioUtils
 
 1.0.7	_____________
+    - Added dependancy build to Build.PL
 	- Added Fastq Filter options for c_scores	
 	- Added module for IUPAC to nucleotide conversion
 	- Added c_score attribute to FastqConsensus which grades the similarity

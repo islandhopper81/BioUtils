@@ -42,6 +42,7 @@ Statistics::Descriptive
 Test::Exception
 Test::More
 Test::Pod
+Test::Pod::Coverage
 Test::Warn
 version
 
