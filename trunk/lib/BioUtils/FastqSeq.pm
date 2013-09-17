@@ -7,6 +7,7 @@ use Class::Std::Utils;
 use List::MoreUtils qw(any);
 use Readonly;
 use Carp qw(croak);
+use Scalar::Util qw(looks_like_number);
 use MyX::Generic 1.0.7;
 use BioUtils::FastaSeq 1.0.7;
 
@@ -33,6 +34,8 @@ use version; our $VERSION = qv('1.0.7');
     sub set_seq;
     sub set_quals_str;
     sub to_FastaSeq;
+    sub trim_back;
+    sub trim_front;
     
     # Private Class Methods
     sub _dec_to_encoding;
@@ -163,6 +166,100 @@ use version; our $VERSION = qv('1.0.7');
         return $fasta_seq;
     }
     
+    sub trim_front {
+        my ($self, $len) = @_;
+        
+        if ( ! defined $len ) {
+            my $seq_obj = BioUtils::FastqSeq->new({
+                header => $self->get_header(),
+                seq => '',
+                quals_str => '',
+            });
+        
+            return $seq_obj;
+        }
+        
+        if ( ! looks_like_number($len) ) {
+            MyX::Generic::Digit::MustBeDigit->throw(
+                error => "trim_front requires digit > 0",
+                value => $len,
+            );
+        }
+        
+        if ( $len < 0 ) {
+            MyX::Generic::Digit::TooSmall->throw(
+                error => "trim_front requires digit > 0",
+                value => $len,
+                MIN => 0,
+            )
+        }
+        
+        my $seq = $self->get_seq();
+        my $qual = $self->get_quals_str();
+        my $keep_seq = substr $seq, -((length $seq) - $len);
+        my $keep_qual = substr $qual, -((length $seq) - $len);
+        my $trim_seq = substr $seq, 0, $len;
+        my $trim_qual = substr $qual, 0, $len;
+        
+        my $trimmed_seq_obj = BioUtils::FastqSeq->new({
+            header => $self->get_header(),
+            seq => $trim_seq,
+            quals_str => $trim_qual,
+        });
+        
+        $self->set_seq($keep_seq);
+        $self->set_quals_str($keep_qual);
+        
+        return $trimmed_seq_obj;
+    }
+    
+    sub trim_back {
+        my ($self, $len) = @_;
+        
+        if ( ! defined $len ) {
+            my $seq_obj = BioUtils::FastqSeq->new({
+                header => $self->get_header(),
+                seq => '',
+                quals_str => '',
+            });
+            
+            return $seq_obj;
+        }
+        
+        if ( ! looks_like_number($len) ) {
+            MyX::Generic::Digit::MustBeDigit->throw(
+                error => "trim_back requires digit > 0",
+                value => $len,
+            );
+        }
+        
+        if ( $len < 0 ) {
+            MyX::Generic::Digit::TooSmall->throw(
+                error => "trim_back requires digit > 0",
+                value => $len,
+                MIN => 0,
+            )
+        }
+        
+        my $seq = $self->get_seq();
+        my $qual = $self->get_quals_str();
+        my $trim_seq = substr $seq, -$len;
+        my $trim_qual = substr $qual, -$len;
+        my $keep_seq = substr $seq, 0, (length $seq) - $len;
+        my $keep_qual = substr $qual, 0, (length $seq) - $len;
+        
+        my $trimmed_seq_obj = BioUtils::FastqSeq->new({
+            header => $self->get_header(),
+            seq => $trim_seq,
+            quals_str => $trim_qual,
+        });
+        
+        $self->set_seq($keep_seq);
+        $self->set_quals_str($keep_qual);
+        
+        return $trimmed_seq_obj;
+    }
+    
     sub _dec_to_encoding {
         my ($dec)  = @_;
         
@@ -205,7 +302,13 @@ This documentation refers to FastqSeq version 1.0.7.
 
 =head1 Included Modules
 
-    NA
+    Class::Std::Utils
+    List::MoreUtils qw(any)
+    Readonly
+    Carp qw(croak)
+    Scalar::Util qw(looks_like_number)
+    MyX::Generic 1.0.7
+    BioUtils::FastaSeq 1.0.7
 
 =head1 Inherit
 
@@ -238,6 +341,10 @@ This documentation refers to FastqSeq version 1.0.7.
     # convert to FastaSeq Object
     my $fasta_seq = $fastq_seq->to_FastaSeq()
     
+    # trim
+    my $trimmed_portion = $fastq_seq->trim_front(2);
+    my $trimmed_portion = $fastq_seq->trim_back(2);
+    
 
 =head1 DESCRIPTION
 
@@ -268,6 +375,8 @@ values can be accessed as a string or array reference.
     set_seq
     set_quals_str
     to_FastaSeq
+    trim_front
+    trim_back
     _dec_to_encode
     _encode_to_dec
     DESTROY
@@ -405,6 +514,34 @@ values can be accessed as a string or array reference.
     Throws: NA
     Comments: NA
     See Also: BioUtils::FastaSeq
+    
+=head2 trim_front
+    
+    Title: trim_front
+    Usage: my $trimmed_portion = $my_fastq_seq->trim_front($dec);
+    Function: Trims X bases off the front of the FastqSeq object
+    Returns: BioUtils::FastqSeq
+    Args: -Int => the number of bases to trim off the front
+    Throws: MyX::Generic::Digit::MustBeDigit
+            MyX::Generic::Digit::TooSmall
+    Comments: The part that is trimmed off is returned.  To ignore/trash that
+              simply call the method like $my_fastq_seq->trim_front(2) (i.e.
+              don't store the return value).
+    See Also: NA
+    
+=head2 trim_back
+    
+    Title: trim_back
+    Usage: my $trimmed_portion = $my_fastq_seq->trim_back($dec);
+    Function: Trims X bases off the back of the FastqSeq object
+    Returns: BioUtils::FastqSeq
+    Args: -Int => the number of bases to trim off the back
+    Throws: MyX::Generic::Digit::MustBeDigit
+            MyX::Generic::Digit::TooSmall
+    Comments: The part that is trimmed off is returned.  To ignore/trash that
+              simply call the method like $my_fastq_seq->trim_back(2) (i.e.
+              don't store the return value).
+    See Also: NA
     
 =head2 _dec_to_encoding
     

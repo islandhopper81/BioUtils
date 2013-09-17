@@ -87,6 +87,15 @@ use Exception::Class (
         isa => 'MyX::Generic',
         fields => ['value'],
     },
+    
+    'MyX::Generic::Ref' => {
+        isa => 'MyX::Generic',
+    },
+    
+    'MyX::Generic::Ref::UnsupportedType' => {
+        isa => 'MyX::Generic::Ref',
+        fields => ['this_type', 'supported_types'],
+    },
 );
 
 # Causes trace to be printed with message.  Doesn't always work!
@@ -172,6 +181,8 @@ see Exception::Class and Exception::Class::Base.
     MyX::Generic::File::Empty
     MyX::Generic::File::BadExtension
     MyX::Generic::BadValue
+    MyX::Generic::Ref
+    MyX::Generic::Ref::UnsupportedType
     
 =back
 
@@ -420,6 +431,30 @@ see Exception::Class and Exception::Class::Base.
               opperating on values that are bad for one reason or another.
     Fields: value => the value that is bad
     Inherits: MyX::Generic::File
+    Comments: NA
+    See Also: NA
+    
+=head2 MyX::Generic::Ref
+
+    Title: MyX::Generic::Ref
+    Throw Usage: MyX::Generic::Ref->throw();
+    Catch Usage: if ( my $e = MyX::Generic::Ref->caught() ) { ... }
+    Function: Throw/Catch a MyX::Generic::Ref exceptions when
+              opperating on reference objects.
+    Fields: See MyX::Generic
+    Inherits: MyX::Generic
+    Comments: NA
+    See Also: NA
+    
+=head2 MyX::Generic::Ref::UnsupportedType
+
+    Title: MyX::Generic::Ref::UnsupportedType
+    Throw Usage: MyX::Generic::Ref::UnsupportedType->throw();
+    Catch Usage: if ( my $e = MyX::Generic::Ref::UnsupportedType->caught() ) { ... }
+    Function: Throw/Catch a MyX::Generic::Ref::UnsupportedType exceptions when
+              opperating on reference objects of the wrong type.
+    Fields: See MyX::Generic::Ref
+    Inherits: MyX::Generic::Ref
     Comments: NA
     See Also: NA
 

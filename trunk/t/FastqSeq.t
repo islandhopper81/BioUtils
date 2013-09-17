@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 use BioUtils::FastqSeq;
-use Test::More tests => 37;
+use Test::More tests => 65;
 use Test::Exception;
 
 BEGIN { use_ok( 'BioUtils::FastqSeq' ); }
@@ -109,5 +109,100 @@ is( BioUtils::FastqSeq::_dec_to_encoding(40), 'I', "_dec_to_encoding(40)" );
 is( BioUtils::FastqSeq::_dec_to_encoding(41), 'J', "_dec_to_encoding(41)" );
 is( BioUtils::FastqSeq::_dec_to_encoding(0), '!', "_dec_to_encoding(0)" );
 # I still need to test out of range query errors
+
+
+# test trim_front method
+{
+    my $header = "seq1";
+    my $seq = "ATCGATCG";
+    my $qual = "AAAABBBB";
+    
+    my $seq_obj = BioUtils::FastqSeq->new({
+        header => $header,
+        seq => $seq,
+        quals_str => $qual,
+    });
+    
+    my $trimmed_obj;
+    
+    # test when no parameter is given
+    lives_ok( sub{ $trimmed_obj = $seq_obj->trim_front() },
+              "trim_front() - throws" );
+    is( $trimmed_obj->get_seq(), "", "trim_front(2) - check trimmed seq" );
+    is( $trimmed_obj->get_quals_str(), "", "trim_front(2) - check qual seq" );
+    is( $seq_obj->get_seq(), "ATCGATCG", "trim_front(2) - check kept seq" );
+    is( $seq_obj->get_quals_str(), "AAAABBBB", "trim_front(2) - check kept quals" );
+    
+    # test when a string is given as a param
+    throws_ok( sub{ $seq_obj->trim_front('a') },
+              'MyX::Generic::Digit::MustBeDigit',
+              "trim_front(a) - throws" );
+    throws_ok( sub{ $seq_obj->trim_front('a') },
+              qr/trim_front requires digit > 0/,
+              "trim_front(a) - throws" );
+    
+    # test when a negative number is given as a param
+    throws_ok( sub{ $seq_obj->trim_front(-1) },
+              'MyX::Generic::Digit::TooSmall',
+              "trim_front(-1) - throws" );
+    throws_ok( sub{ $seq_obj->trim_front(-1) },
+              qr/trim_front requires digit > 0/,
+              "trim_front(-1) - throws" );
+    
+    # test a good trim run
+    lives_ok( sub{ $trimmed_obj = $seq_obj->trim_front(2) },
+             "trim_front(2) - lives" );
+    is( $trimmed_obj->get_seq(), "AT", "trim_front(2) - check trimmed seq" );
+    is( $trimmed_obj->get_quals_str(), "AA", "trim_front(2) - check qual seq" );
+    is( $seq_obj->get_seq(), "CGATCG", "trim_front(2) - check kept seq" );
+    is( $seq_obj->get_quals_str(), "AABBBB", "trim_front(2) - check kept quals" );
+}
+
+# test trim_back method
+{
+    my $header = "seq1";
+    my $seq = "ATCGATCG";
+    my $qual = "AAAABBBB";
+    
+    my $seq_obj = BioUtils::FastqSeq->new({
+        header => $header,
+        seq => $seq,
+        quals_str => $qual,
+    });
+    
+    my $trimmed_obj;
+    
+     # test when no parameter is given
+    lives_ok( sub{ $trimmed_obj = $seq_obj->trim_back() },
+              "trim_back() - throws" );
+    is( $trimmed_obj->get_seq(), "", "trim_back(2) - check trimmed seq" );
+    is( $trimmed_obj->get_quals_str(), "", "trim_back(2) - check qual seq" );
+    is( $seq_obj->get_seq(), "ATCGATCG", "trim_back(2) - check kept seq" );
+    is( $seq_obj->get_quals_str(), "AAAABBBB", "trim_back(2) - check kept quals" );
+    
+    # test when a string is given as a param
+    throws_ok( sub{ $seq_obj->trim_back('a') },
+              'MyX::Generic::Digit::MustBeDigit',
+              "trim_back(a) - throws" );
+    throws_ok( sub{ $seq_obj->trim_back('a') },
+              qr/trim_back requires digit > 0/,
+              "trim_back(a) - throws" );
+    
+    # test when a negative number is given as a param
+    throws_ok( sub{ $seq_obj->trim_back(-1) },
+              'MyX::Generic::Digit::TooSmall',
+              "trim_back(-1) - throws" );
+    throws_ok( sub{ $seq_obj->trim_back(-1) },
+              qr/trim_back requires digit > 0/,
+              "trim_back(-1) - throws" );
+    
+    # test a good run of trim_back
+    lives_ok( sub{ $trimmed_obj = $seq_obj->trim_back(2) },
+             "trim_back(2) - lives" );
+    is( $trimmed_obj->get_seq(), "CG", "trim_back(2) - check trimmed seq" );
+    is( $trimmed_obj->get_quals_str(), "BB", "trim_back(2) - check qual seq" );
+    is( $seq_obj->get_seq(), "ATCGAT", "trim_back(2) - check kept seq" );
+    is( $seq_obj->get_quals_str(), "AAAABB", "trim_back(2) - check kept quals" );
+}
 
 
