@@ -3,21 +3,30 @@ package BioUtils::ConsensusBuilder::ConsensusBuilder;
 use strict;
 use warnings;
 
-use BioUtils::ConsensusBuilder::FastqColumn 1.0.7;
-use BioUtils::ConsensusBuilder::FastqConsensus 1.0.7;
+use BioUtils::ConsensusBuilder::FastqColumn 1.0.8;
+use BioUtils::ConsensusBuilder::FastqConsensus 1.0.8;
 use BioUtils::Codec::QualityScores qw( int_to_illumina_1_8 illumina_1_8_to_int);
 use BioUtils::Codec::IUPAC qw( nuc_str_to_iupac iupac_to_nuc_str);
+use BioUtils::MyX::ConsensusBuilder;
+use MyX::Generic;
 use Carp qw(carp croak);
-use version; our $VERSION = qv('1.0.7');
+use version; our $VERSION = qv('1.0.8');
 use Exporter qw( import );
-our @EXPORT_OK = qw( buildFromClustalwFile buildFromSimpleAlign );
+our @EXPORT_OK = qw(buildFromClustalwFile buildFromSimpleAlign build_consensus);
 
 ###############
 # Subroutines #
 ###############
-sub buildFromClustalwFile($$);
-sub buildFromSimpleAlign($$);
-sub _parseAlignedSeqsFile($);
+sub buildFromClustalwFile;
+sub _parseAlignedSeqsFile;
+sub buildFromSimpleAlign;
+sub build_consensus;
+sub _build_consensus_from_href;
+sub _build_consensus_from_aref;
+sub _check_seq_count;
+sub _check_seq_ref;
+sub _check_aln_len;
+
 
 
 
@@ -26,8 +35,168 @@ sub _parseAlignedSeqsFile($);
 ###############
 # Subroutines #
 ###############
+sub build_consensus {
+	my ($seqs_ref) = @_;
+	
+	if ( ref $seqs_ref eq "HASH" ) {
+		return _build_consensus_from_href($seqs_ref);
+	}
+	elsif ( ref $seqs_ref eq "ARRAY" ) {
+		return _build_consensus_from_aref($seqs_ref);
+	}
+	else {
+		MyX::Generic::Ref::UnsupportedType->throw(
+			error => "build_consensus expects HASH or ARRAY reference",
+			this_type => ref $seqs_ref,
+			supported_types => "HASH or ARRAY reference",
+		);
+	}
+}
 
-sub buildFromClustalwFile($$) {
+sub _build_consensus_from_href {
+	my ($seqs_href) = @_;
+	
+	# The input here is a hash where KEY => seq ID and VALUE => FastqSeq
+	
+	# convert to an array of sequences and use build_consensus_from_arr
+	my @seqs_arr;
+	foreach my $key ( keys %$seqs_href ) {
+		push @seqs_arr, $seqs_href->{$key};
+	}
+	
+	return _build_consensus_from_aref(\@seqs_arr);
+}
+
+sub _build_consensus_from_aref {
+	my ($seqs_arr) = @_;
+	
+	# the number of sequence from which to build a consensus
+	my $seq_count = _check_seq_count(scalar @$seqs_arr);
+	
+	# NOTE: right now I assume that the seqs_arr is square for both sequences
+	# and quality values
+	my @seqs_matrix;
+	my @quals_matrix;
+	my $alignment_len;
+	my $i;
+	for ( $i = 0; $i < $seq_count; $i++ ) {
+		_check_seq_ref($seqs_arr->[$i]);
+		
+		my @base_arr = split //, $seqs_arr->[$i]->get_seq();
+		push @seqs_matrix, \@base_arr;
+		my @qual_arr = split //, $seqs_arr->[$i]->get_quals_str();
+		push @quals_matrix, \@qual_arr;
+		
+		$alignment_len = _check_aln_len($alignment_len,
+										scalar @base_arr,
+										scalar @qual_arr);
+	}
+	
+	# create some variables to use when building a consensus
+	my $col = BioUtils::ConsensusBuilder::FastqColumn->new();
+	my ($base, $qual, $iupac, $j);
+	my $c_score = 0;
+	my $conStr = q{};
+    my $con_quals_str = q{};
+    
+    for ( $i = 0; $i < $alignment_len; $i++ ) {
+		# now for each sequence add the bases to the column
+        for ( $j = 0; $j < $seq_count; $j++ ) {
+            $base = $seqs_matrix[$j]->[$i];
+            if ( $base eq "-" ) {
+                $col->addBase($base, int_to_illumina_1_8(0));  # adding a dash
+            }
+            else {
+                $qual = $quals_matrix[$j]->[$i];
+                $col->addBase($base, $qual);
+            }
+        }
+		
+        my ($conBase, $conQual) = $col->getConBaseAndQual();
+        if ( defined $conStr and length $conBase > 0 ) {
+			$conStr .= $conBase;
+			$con_quals_str .= $conQual;
+			
+			# calcuate the c_score for this column and add to running c_score
+			foreach my $b ( split(//, iupac_to_nuc_str($conBase)) ) {
+				$c_score += illumina_1_8_to_int($conQual) *
+							( $col->getBaseCount($b) / $seq_count );
+			}
+		}
+		
+		# clear the variables
+		$col->clear_col();
+		$base = '';
+		$qual = '';
+    }
+    
+    my $fastqConsensus = BioUtils::ConsensusBuilder::FastqConsensus->new({
+        seq => $conStr,
+        quals_str => $con_quals_str,
+		c_score => ($c_score / $alignment_len),
+	});
+    
+    return ($fastqConsensus);
+}
+
+sub _check_seq_count {
+	my ($seq_count) = @_;
+	
+	if ( $seq_count < 1 ) {
+		BioUtils::MyX::ConsensusBuilder::NoSeqs->throw(
+			error => "No seqs to build a consensus from",
+		);
+	}
+	
+	return $seq_count;
+}
+
+sub _check_seq_ref {
+	my ($seq_obj) = @_;
+	
+	if ( ref $seq_obj eq "BioUtils::FastaSeq" or
+		 ref $seq_obj eq "BioUtils::FastqSeq" ) {
+		return 1;
+	}
+	else {
+		MyX::Generic::Ref::UnsupportedType->throw(
+			error => "Reference must be BioUtils::FastaSeq or BioUtils::FastqSeq",
+			this_type => ref $seq_obj,
+			supported_types => "BioUtils::FastqSeq, BioUtils::FastaSeq",
+		);
+	}
+}
+
+sub _check_aln_len {
+	my ($aln_len, $seq_len, $qual_len) = @_;
+	
+	# assign and check alignment_len
+	if ( ! defined $aln_len ) {
+		$aln_len = $seq_len;
+	}
+	else {
+		if ( $aln_len != $seq_len ) {
+			BioUtils::MyX::ConsensusBuilder::SeqsNotSqr->throw(
+				error => "Alignment seqs are not square",
+				alignment_len => $aln_len,
+				seq_len => $seq_len,
+			);
+		}
+	}
+	
+	# check the quality values are same length as seqs
+	if ( $aln_len != $qual_len ) {
+		BioUtils::MyX::ConsensusBuilder::QualsNotSqr->throw(
+				error => "Alignment quals are not square",
+				alignment_len => $aln_len,
+				quals_len => $qual_len,
+			);
+	}
+	
+	return $aln_len;
+}
+
+sub buildFromClustalwFile {
     my ($alignedSeqsFile, $quals_href) = @_;
     
     # Read in the alignments created by clustalw
@@ -93,7 +262,7 @@ sub buildFromClustalwFile($$) {
 }
 
 # DEPRECIATED -- see POD
-sub buildFromSimpleAlign($$) {
+sub buildFromSimpleAlign {
     my ($simpleAlignObj, $quals_href) = @_;
     
     # Because this method is depreciated I moved the unnecessary
@@ -149,7 +318,7 @@ sub buildFromSimpleAlign($$) {
     return ($fastqConsensus);
 }
 
-sub _parseAlignedSeqsFile($) {
+sub _parseAlignedSeqsFile {
     my ($alignedSeqsFile) = @_;
     
     if ( ! defined $alignedSeqsFile ) {
@@ -223,7 +392,7 @@ from a multiple sequence alignment (MSA)
 
 =head1 VERSION
 
-This documentation refers to ConsensusBuilder version 1.0.7.
+This documentation refers to ConsensusBuilder version 1.0.8.
 
 =head1 Included Modules
 
@@ -270,9 +439,15 @@ object.
 
 =over
 
-    buildFromClustalwFile
-    buildFromSimpleAlign
-    _parseAlignedSeqsFile
+	buildFromClustalwFile
+	_parseAlignedSeqsFile
+	buildFromSimpleAlign
+	build_consensus
+	_build_consensus_from_href
+	_build_consensus_from_aref
+	_check_seq_count
+	_check_seq_ref
+	_check_aln_len
     
 =back
 
@@ -291,7 +466,18 @@ object.
     Throws: NA
     Comments: NA
     See Also: FastqConsensus
+	
+=head2 _parseAlignedSeqsFile
 
+    Title: _parseAlignedSeqsFile
+    Usage: _parseAlignedSeqsFile($file);
+    Function: Parses the output gde output file from clustalw
+    Returns: ($aligned_seqs_href, $alignment_length)
+    Args: -file => a file with clustalw formated aligned sequences
+    Throws: NA
+    Comments: The aligned_seqs_href is a hash reference with KEY => clustalwId,
+              VALUE => sequence string
+    See Also: NA
 
 =head2 buildFromSimpleAlign
     
@@ -306,17 +492,86 @@ object.
     Throws: NA
     Comments: DEPRECIATED
     See Also: FastqConsensus
+	
+=head2 build_consensus
 
-=head2 _parseAlignedSeqsFile
+    Title: build_consensus
+    Usage: build_consensus($seqs_ref);
+    Function: Builds a consensus sequences from 2 or more sequences passed in to the
+			  method in either a hash ref or array ref.
+    Returns: FastqConsensus object
+    Args: -seqs_ref => either a hash reference or array reference with FastqSeq objects
+    Throws: MyX::Generic::Ref::UnsupportedType
+			BioUtils::MyX::ConsensusBuilder::NoSeqs
+			BioUtils::Myx::ConsensusBuilder::SeqsNotSqr
+			BioUtils::MyX::ConsensusBuilder::QualsNotSqr
+    Comments: This method assumes that the sequences are in a square MSA alignment.
+    See Also: NA
+	
+=head2 _build_consensus_from_href
 
-    Title: _parseAlignedSeqsFile
-    Usage: _parseAlignedSeqsFile($file);
-    Function: Parses the output gde output file from clustalw
-    Returns: ($aligned_seqs_href, $alignment_length)
-    Args: -file => a file with clustalw formated aligned sequences
-    Throws: NA
-    Comments: The aligned_seqs_href is a hash reference with KEY => clustalwId,
-              VALUE => sequence string
+    Title: _build_consensus_from_href
+    Usage: _build_consensus_from_href($seqs_href);
+    Function: Builds a consensus sequences from 2 or more sequences passed in to the
+			  method in a hash ref.
+    Returns: FastqConsensus object
+    Args: -seqs_href => a hash reference with FastqSeq objects
+    Throws: MyX::Generic::Ref::UnsupportedType
+			BioUtils::MyX::ConsensusBuilder::NoSeqs
+			BioUtils::Myx::ConsensusBuilder::SeqsNotSqr
+			BioUtils::MyX::ConsensusBuilder::QualsNotSqr
+    Comments: This method assumes that the sequences are in a square MSA alignment.
+    See Also: NA
+	
+=head2 _build_consensus_from_aref
+
+    Title: _build_consensus_from_aref
+    Usage: _build_consensus_from_aref($seqs_aref);
+    Function: Builds a consensus sequences from 2 or more sequences passed in to the
+			  method in an array ref.
+    Returns: FastqConsensus object
+    Args: -seqs_aref => an array reference with FastqSeq objects
+    Throws: MyX::Generic::Ref::UnsupportedType
+			BioUtils::MyX::ConsensusBuilder::NoSeqs
+			BioUtils::Myx::ConsensusBuilder::SeqsNotSqr
+			BioUtils::MyX::ConsensusBuilder::QualsNotSqr
+    Comments: This method assumes that the sequences are in a square MSA alignment.
+    See Also: NA
+	
+=head2 _check_seq_count
+
+    Title: _check_seq_count
+    Usage: _check_seq_count($seq_count);
+    Function: Ensures there are at least 2 seqs to build a consensus from.
+    Returns: $seq_count
+    Args: -seq_count => Int representing the number of seqs
+    Throws: BioUtils::MyX::ConsensusBuilder::NoSeqs
+    Comments: NA
+    See Also: NA
+	
+=head2 _check_seq_ref
+
+    Title: _check_seq_ref
+    Usage: _check_seq_ref($seq_obj);
+    Function: Ensures that the sequences are BioUtils::FastqSeq objects
+    Returns: 1 on success
+    Args: -seq_obj => The sequence object
+    Throws: MyX::Generic::Ref::UnsupportedType
+    Comments: NA
+    See Also: NA
+	
+=head2 _check_aln_len
+
+    Title: _check_aln_len
+    Usage: _check_aln_len($aln_len, $seq_len, $qual_len);
+    Function: Ensures sequences and quality values are in a square matrix
+    Returns: $aln_len
+    Args: -aln_len => the current alignment length based on the first seq
+		  -seq_len => the current sequence length to compare to aln_len
+		  -qual_len => the current quality length to compare to aln_len
+    Throws: BioUtils::MyX::ConsensusBuilder::SeqsNotSqr
+			BioUtils::MyX::ConsensusBuilder::QualsNotSqr
+    Comments: NA
     See Also: NA
 
 

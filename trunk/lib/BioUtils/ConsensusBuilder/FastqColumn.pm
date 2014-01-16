@@ -9,7 +9,7 @@ use warnings;
 use Class::Std::Utils;
 use Carp;
 use Readonly;
-use version; our $VERSION = qv('1.0.7');
+use version; our $VERSION = qv('1.0.8');
 use BioUtils::Codec::QualityScores qw( int_to_illumina_1_8 illumina_1_8_to_int);
 use BioUtils::Codec::IUPAC qw( nuc_str_to_iupac iupac_to_nuc_str);
 
@@ -344,7 +344,7 @@ also repsonsible for calling the consensus of that column.
 
 =head1 VERSION
 
-This documentation refers to FastqColumn version 1.0.7.
+This documentation refers to FastqColumn version 1.0.8.
 
 =head1 Included Modules
 

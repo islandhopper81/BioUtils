@@ -26,7 +26,7 @@ with fastq sequences and corresponding objects.
 
 =head1 VERSION
 
-This documentation refers to BioUtils::MyX::Fastq version 1.0.7.
+This documentation refers to BioUtils::MyX::Fastq version 1.0.8.
 
 =head1 Included Modules
 
@@ -39,7 +39,7 @@ This documentation refers to BioUtils::MyX::Fastq version 1.0.7.
 =head1 SYNOPSIS
 
     # Throw a Fastq exception
-    use BioUtils::MyX::Fastq 1.0.7;
+    use BioUtils::MyX::Fastq 1.0.8;
     if ( ... ) {   # Some code looking for an error
         BioUtils::MyX::Fastq->throw(
             error => 'A fastq exception'

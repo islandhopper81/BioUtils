@@ -8,8 +8,8 @@ use Class::Std::Utils;
 use List::MoreUtils qw(any);
 use Readonly;
 use Scalar::Util qw(looks_like_number);
-use MyX::Generic 1.0.7;
-use version; our $VERSION = qv('1.0.7');
+use MyX::Generic 1.0.8;
+use version; our $VERSION = qv('1.0.8');
 
 {
     Readonly my $NEW_USAGE => q{ new( {header =>, seq => } ) };
@@ -26,6 +26,9 @@ use version; our $VERSION = qv('1.0.7');
     sub set_seq;
     sub trim_front;
     sub trim_back;
+    sub rev;
+    sub comp;
+    sub rev_comp;
     
     # Private Class Methods
 
@@ -98,7 +101,7 @@ use version; our $VERSION = qv('1.0.7');
         return 1;
     }
     
-    sub set_seq($) {
+    sub set_seq {
         my ($self, $seq) = @_;
         $seq_of{ident $self} = $seq;
         return 1;
@@ -186,6 +189,32 @@ use version; our $VERSION = qv('1.0.7');
         return $trimmed_seq_obj;
     }
     
+    sub rev_comp {
+        my ($self) = @_;
+        
+        $self->rev();
+        $self->comp();
+        
+        return 1;
+    }
+    
+    sub rev {
+        my ($self) = @_;
+        
+        $self->set_seq(scalar reverse $self->get_seq());
+        return 1;
+    }
+    
+    sub comp {
+        my ($self) = @_;
+        
+        my $str = $self->get_seq();
+        $str =~ tr/ACGTacgt/TGCAtgca/;
+        $self->set_seq($str);
+        
+        return 1;
+    }
+    
     sub DESTROY {
         my ($self) = @_;
         
@@ -205,7 +234,7 @@ BioUtils::FastaSeq - A data structure for sequences
 
 =head1 VERSION
 
-This document describes BioUtils::FastaSeq version 1.0.7
+This document describes BioUtils::FastaSeq version 1.0.8
 
 
 =head1 SYNOPSIS
@@ -223,6 +252,19 @@ This document describes BioUtils::FastaSeq version 1.0.7
     
     $fasta_seq->set_seq("ATCT");
     $fasta_seq->set_header("new_header");
+    
+    # trim
+    my $trimmed_portion = $fasta_seq->trim_front(2);
+    my $trimmed_portion = $fasta_seq->trim_back(2);
+    
+    # reverse the sequence
+    $fasta_seq->rev();
+    
+    # complement the sequence
+    $fasta_seq->comp();
+    
+    # reverse complement the sequence
+    $fasta_seq->rev_comp();
   
   
 =head1 DESCRIPTION
@@ -241,6 +283,9 @@ This document describes BioUtils::FastaSeq version 1.0.7
     set_seq
     trim_front
     trim_back
+    rev
+    comp
+    rev_comp
 
 
 =head1 DIAGNOSTICS
@@ -271,8 +316,8 @@ BioUtils::FastaSeq requires no configuration files or environment variables.
     List::MoreUtils qw(any)
     Readonly
     Scalar::Util qw(looks_like_number)
-    MyX::Generic 1.0.7
-    version our $VERSION = qv('1.0.7')
+    MyX::Generic 1.0.8
+    version our $VERSION = qv('1.0.8')
 
 
 =head1 INCOMPATIBILITIES
@@ -353,10 +398,10 @@ BioUtils::FastaSeq requires no configuration files or environment variables.
 =head2 trim_front
     
     Title: trim_front
-    Usage: my $trimmed_portion = $my_fastq_seq->trim_front($dec);
+    Usage: my $trimmed_portion = $my_fastq_seq->trim_front($num);
     Function: Trims X bases off the front of the FastaSeq object
     Returns: BioUtils::FastaSeq
-    Args: -Int => the number of bases to trim off the front
+    Args: -num => the number of bases to trim off the front
     Throws: MyX::Generic::Digit::MustBeDigit
             MyX::Generic::Digit::TooSmall
     Comments: The part that is trimmed off is returned.  To ignore/trash that
@@ -367,15 +412,48 @@ BioUtils::FastaSeq requires no configuration files or environment variables.
 =head2 trim_back
     
     Title: trim_back
-    Usage: my $trimmed_portion = $my_fastq_seq->trim_back($dec);
+    Usage: my $trimmed_portion = $my_fastq_seq->trim_back($num);
     Function: Trims X bases off the back of the FastaSeq object
     Returns: BioUtils::FastaSeq
-    Args: -Int => the number of bases to trim off the back
+    Args: -num => the number of bases to trim off the back
     Throws: MyX::Generic::Digit::MustBeDigit
             MyX::Generic::Digit::TooSmall
     Comments: The part that is trimmed off is returned.  To ignore/trash that
               simply call the method like $my_fastq_seq->trim_back(2) (i.e.
               don't store the return value).
+    See Also: NA
+    
+=head2 rev
+    
+    Title: rev
+    Usage: $my_fastq_seq->rev();
+    Function: Reverse the sequence
+    Returns: 1 on successful completion
+    Args: NA
+    Throws: NA
+    Comments: NA
+    See Also: NA
+    
+=head2 comp
+    
+    Title: comp
+    Usage: $my_fastq_seq->comp();
+    Function: Compelements the sequence
+    Returns: 1 on successful completion
+    Args: NA
+    Throws: NA
+    Comments: NA
+    See Also: NA
+    
+=head2 rev_comp
+    
+    Title: rev_comp
+    Usage: $my_fastq_seq->rev_comp();
+    Function: Reverse compelements the sequence
+    Returns: 1 on successful completion
+    Args: NA
+    Throws: NA
+    Comments: NA
     See Also: NA
 
 =head2 DESTROY

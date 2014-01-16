@@ -1,4 +1,4 @@
-BioUtils version 1.0.7
+BioUtils version 1.0.8
 
 A library of perl modules and scripts for doing basic DNA sequence operations.
 
@@ -31,10 +31,11 @@ Class::Std::Utils
 Config::Std
 Data::Dumper
 Exception::Class
-Getopt::Long
 Exporter
 File::Temp
 File::Basename
+Getopt::Long
+IPC::Cmd
 List::MoreUtils
 Pod::Usage
 Readonly

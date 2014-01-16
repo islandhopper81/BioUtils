@@ -3,11 +3,17 @@ Changes
 MANIFEST			This list of files
 README
 ignore.txt
+lib/BioUtils/Align/FastaSeq.pm
+lib/BioUtils/Align/Pairwise.pm
+lib/BioUtils/Align/Pairwise/NW.pm
+lib/BioUtils/Align/Pairwise/SW.pm
+lib/BioUtils/Align/Pairwise/Alignment.pm
 lib/BioUtils/Codec/QualityScores.pm
 lib/BioUtils/Codec/IUPAC.pm
 lib/BioUtils/ConsensusBuilder/ConsensusBuilder.pm
 lib/BioUtils/ConsensusBuilder/FastqColumn.pm
 lib/BioUtils/ConsensusBuilder/FastqConsensus.pm
+lib/BioUtils/Entropy/Shannon.pm
 lib/BioUtils/FastaIO.pm
 lib/BioUtils/FastaSeq.pm
 lib/BioUtils/FastqIO.pm
@@ -15,6 +21,7 @@ lib/BioUtils/FastqSeq.pm
 lib/BioUtils/QC/FastqFilter.pm
 lib/BioUtils/QC/ContaminantFilter.pm
 lib/BioUtils/MyX/Fastq.pm
+lib/BioUtils/MyX/ConsensusBuilder.pm
 lib/BioUtils/SeqSet/Diagnostics.pm
 lib/MyX/Generic.pm
 bin/fastq_filter.pl
@@ -22,11 +29,17 @@ bin/filter_contaminants.pl
 t/00.load.t
 t/pod-coverage.t
 t/pod.t
+t/Align/FastaSeq.t
+t/Align/Pairwise.t
+t/Align/Pairwise/Alignment.t
+t/Align/Pairwise/NW.t
+t/Align/Pairwise/SW.t
 t/Codec/Codec_QualityScores.t
 t/Codec/Codec_IUPAC.t
 t/ConsensusBuilder/ConsensusBuilder.t
 t/ConsensusBuilder/FastqColumn.t
 t/ConsensusBuilder/FastqConsensus.t
+t/Entropy/Shannon.t
 t/FastaIO.t
 t/FastaSeq.t
 t/FastqIO.t

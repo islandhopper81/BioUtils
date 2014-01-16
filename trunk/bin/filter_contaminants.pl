@@ -8,7 +8,7 @@
 use strict;
 use warnings;
 
-use BioUtils::QC::ContaminantFilter 1.0.7;
+use BioUtils::QC::ContaminantFilter 1.0.8;
 use Getopt::Long;
 use Config::Std;
 
@@ -57,8 +57,14 @@ my $filter = BioUtils::QC::ContaminantFilter->new({
                 otu_table => $hash{'OTU Table'}{'otu_table_file'},
                 });
 
-print "Running Filter\n\n";
-$filter->run_filter();
+if ( $hash{'BLAST Parameters'}{'parallel'} =~ m/ON/i ) {
+    print "Running Parallelized Filter\n\n";
+    $filter->run_filter(1, $hash{'BLAST Parameters'}{'seqs_per_file'});
+}
+else {
+    print "Running Filter\n\n";
+    $filter->run_filter();
+}
 
 print "Finished\n\n";
 
@@ -130,6 +136,8 @@ from which contaminant OTUs will be seperated from non-contaminant OTUs.
     query: /home/me/my_seqs_file.fasta
     evalue: 0.00001
     perc_identity: 80
+    parallel: ON
+    seqs_per_file: 10000
     
     [OTU Table]
     otu_table_file: /home/me/my_otu_table_file.txt
@@ -160,7 +168,7 @@ from which contaminant OTUs will be seperated from non-contaminant OTUs.
     
 =head1 DEPENDANCIES
 
-    BioUtils::QC::ContaminantFilter 1.0.7
+    BioUtils::QC::ContaminantFilter 1.0.8
     Getopt::Long
     Config::Std
 

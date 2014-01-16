@@ -6,14 +6,16 @@ use Carp qw(carp croak);
 use Class::Std::Utils;
 use Readonly;
 use List::MoreUtils qw(any);
-use MyX::Generic 1.0.7;
-use BioUtils::FastaSeq 1.0.7;
-use BioUtils::FastaIO 1.0.7;
+use MyX::Generic 1.0.8;
+use BioUtils::FastaSeq 1.0.8;
+use BioUtils::FastaIO 1.0.8;
 use File::Temp qw(tempfile);
-use version; our $VERSION = qv('1.0.7');
+use IPC::Cmd qw(can_run);
+use version; our $VERSION = qv('1.0.8');
 
 {
     Readonly my $NEW_USAGE => q{ new( {params_file => } ) };
+    Readonly my $SEQS_PER_FILE => 10000;
     
     # Attributes #
     my %blast_db_of;
@@ -52,10 +54,14 @@ use version; our $VERSION = qv('1.0.7');
     sub run_filter;
     sub _init;
     sub _run_blast;
+    sub _run_parallel_blast;
+    sub _split_FASTAs;
     sub _parse_blast_file;
     sub _print_results;
     sub _sequence_printing;
     sub _otu_table_printing;
+    sub _check_blastn_exe;
+    sub _check_bsub_exe;
     
     
     ###############
@@ -202,9 +208,19 @@ use version; our $VERSION = qv('1.0.7');
     # Others #
     ##########
     sub run_filter {
-        my ($self) = @_;
+        my ($self, $parallel_flag, $seq_per_file) = @_;
         
-        my $blast_output_file = $self->_run_blast();
+        my $blast_output_file;
+        if ( $parallel_flag ) {
+            print "Run Parllel Blast\n";
+            $blast_output_file = $self->_run_parallel_blast($seq_per_file);
+        }
+        else {
+            $blast_output_file = $self->_run_blast();
+        }
+        
+        print "\n\nBlast output file: $blast_output_file\n\n";
+        
         my $contaminant_names_href = $self->_parse_blast_file($blast_output_file);
         $self->_print_results($contaminant_names_href);
         
@@ -254,6 +270,8 @@ use version; our $VERSION = qv('1.0.7');
     sub _run_blast {
         my ($self) = @_;
         
+        _check_blastn_exe();
+        
         my ($fh, $output_file) = tempfile();
         close($fh);
         
@@ -288,6 +306,122 @@ use version; our $VERSION = qv('1.0.7');
         system("$command");
         
         return $output_file;
+    }
+    
+    sub _run_parallel_blast {
+        my ($self, $seqs_per_file) = @_;
+        
+        _check_blastn_exe();
+        _check_bsub_exe();
+        
+        if ( ! defined $seqs_per_file or $seqs_per_file <= 0) {
+            $seqs_per_file = $SEQS_PER_FILE;
+        }
+        
+        # create temp directories
+        my $fasta_dir = $self->_split_FASTAs($seqs_per_file);
+        my $log_dir = $self->get_output_dir() . "/tmp_logs";
+        my $blast_dir = $self->get_output_dir() . "/tmp_blasts";
+        
+        if ( ! -d $log_dir ) {system("mkdir $log_dir");}
+        if ( ! -d $blast_dir ) {system("mkdir $blast_dir");}
+        
+        # create the blast output file
+        my ($fh, $output_file) = tempfile();
+        close($fh);
+        
+        # store other variables for later usage
+        my $database = $self->get_blast_db();
+        my $evalue = $self->get_eval();
+        my $perc_identity = $self->get_perc_iden();
+        my $output_fmt = $self->get_output_fmt();
+        my $max_targets = $self->get_max_targets();
+
+        
+        # build and run the parallel blast commands
+        opendir (BLAST_DIR, "$fasta_dir")  or die $!;
+        my @blast_files = grep { $_ =~ '.*\.fasta$' } readdir(BLAST_DIR);
+    
+        foreach my $blast_file (@blast_files) {            
+            my $command = "bsub -q week " .
+                            "-o $log_dir/$blast_file.lsfout " .
+                            "-e $log_dir/$blast_file.err " .
+                            "-n 1 -J parallelBLAST ";
+            
+            $command .= "blastn " .
+                      "-db $database " . 
+                      "-query $fasta_dir/$blast_file " .
+                      "-out $blast_dir/$blast_file.bls ";
+        
+            # add in optional paramters
+            if ( defined $evalue ) {
+                $command .= "-evalue $evalue ";
+            }
+            if ( defined $perc_identity ) {
+                $command .= "-perc_identity $perc_identity ";
+            }
+            if ( defined $output_fmt ) {
+                $command .= "-outfmt $output_fmt ";
+            }
+            if ( defined $max_targets ) {
+                $command .= "-max_target_seqs $max_targets";
+            }
+            
+            print "BLAST Command:\n $command\n";
+            system("$command");
+        }
+    
+        close(BLAST_DIR);
+    
+        my $active_job=1;
+        while ($active_job) {
+            sleep(30);
+            system('bjobs -J parallelBLAST > ACTIVE_JOB_CHECK');
+            $active_job = -s "ACTIVE_JOB_CHECK";
+        }
+        system("rm ACTIVE_JOB_CHECK");
+        
+        # Merge all the split blast output files into one
+        system ("cat $blast_dir/*.bls > $output_file");
+        
+        # clean up the tmp directories.  Comment this line for debugging
+        #system("rm -rf $fasta_dir $blast_dir $log_dir");
+        
+        return $output_file;
+    }
+    
+    sub _split_FASTAs {
+        my ($self, $seqs_per_file) = @_;
+        
+        my $fasta_in = BioUtils::FastaIO->new({
+                        stream_type => '<',
+                        file => $self->get_query_file()
+                        });
+        my $tmp_dir = $self->get_output_dir() . "/tmp_fasta/";
+        if ( ! -d $tmp_dir ) {system("mkdir $tmp_dir");}
+    
+        my $file_count = 1;  # Number of files that have been created.
+        my $seq_count = 0;  # Number of sequences saved to a certain file
+        my $fasta_out;
+        
+        while ( my $seq = $fasta_in->get_next_seq() ) {
+            if ( $seq_count == 0 ) {
+                $fasta_out = BioUtils::FastaIO->new({
+                    stream_type => '>',
+                    file => "$tmp_dir/$file_count.fasta"
+                });
+            }
+            
+            $fasta_out->write_seq($seq);
+            $seq_count++;
+    
+            if ( $seq_count == $seqs_per_file ) {
+                $file_count++;
+                $seq_count = 0;
+            }
+        }
+        
+        return $tmp_dir;
     }
     
     sub _parse_blast_file {
@@ -410,6 +544,18 @@ use version; our $VERSION = qv('1.0.7');
         
         return 1;
     }
+    
+    sub _check_blastn_exe {
+        eval{ can_run("blastn") };
+        
+        return 1;
+    }
+    
+    sub _check_bsub_exe {
+        eval{ can_run("bsub") };
+        
+        return 1;
+    }
 }
 
 
@@ -423,7 +569,7 @@ BioUtils::QC::ContaminantFilter - Identifies and removes sequence contaminants
 
 =head1 VERSION
 
-This document describes BioUtils::QC::ContaminantFilter version 1.0.7
+This document describes BioUtils::QC::ContaminantFilter version 1.0.8
 
 
 =head1 Included Modules
@@ -433,9 +579,10 @@ This document describes BioUtils::QC::ContaminantFilter version 1.0.7
     Readonly
     List::MoreUtils qw(any)
     MyX::Generic
-    BioUtils::FastaSeq 1.0.7
-    BioUtils::FastaIO 1.0.7
+    BioUtils::FastaSeq 1.0.8
+    BioUtils::FastaIO 1.0.8
     File::Temp qw(tempfile)
+    IPC::Cmd qw(can_run)
     version
 
 
@@ -458,6 +605,11 @@ This document describes BioUtils::QC::ContaminantFilter version 1.0.7
     
     # run the filtering process
     $contam_filter->filter();
+    
+    # or to run using the LSF parallelization
+    my $parallel_flag = 1; # TRUE
+    my $seqs_per_file = 10000;
+    $contam_filter->filter($parallel_flag, $seqs_per_file);
   
   
 =head1 DESCRIPTION
@@ -470,6 +622,10 @@ This document describes BioUtils::QC::ContaminantFilter version 1.0.7
     other file has all the information about the non-contaminants.  The
     directory where these output files are located is specified in the params
     file provided by the user.
+    
+    The BLAST can now be run utilizing an LSF cluster parallelization scheme.
+    The user may need to adjust the system command to reflect their LSF cluster
+    setup (i.e. queue name)
 
 
 =head1 METHODS
@@ -501,10 +657,14 @@ This document describes BioUtils::QC::ContaminantFilter version 1.0.7
     run_filter
     _init
     _run_blast
+    _run_parallel_blast
+    _split_FASTAs
     _parse_blast_file
     _print_results
     _sequence_printing
     _otu_table_printing
+    _check_blastn_exe
+    _check_bsub_exe
 
 =head1 DIAGNOSTICS
 
@@ -530,11 +690,18 @@ A required file cannot be opened.
     BLAST 2.2.25+ or a compatable version must be installed.  The blastn and
     makeblastdb commands must be avaliable as system commands (i.e. they must
     be found in the system PATH variable).
+    
+    The parallel version is only compatabile with an LSF cluster system.  The
+    user may need to edit the source code where a system command is used to
+    submit a jobs to the cluster to reflect the users own LSF system (i.e.
+    queue name).  Other edits may be made to make parallelization compatable
+    with similar cluster systems.
 
 
 =head1 DEPENDENCIES
 
  BLAST 2.2.25+
+ bsub (for parallelization option)
 
 
 =head1 INCOMPATIBILITIES
@@ -567,14 +734,23 @@ None reported.
 =head2 run_filter
 
     Title: run_filter
-    Usage: $contam_filter->run_filter();
+    Usage: $contam_filter->run_filter($parallel_flage, $seqs_per_file);
     Function: Filters out OTUs from the fasta and OTU table that are contaminants
     Returns: 1 on successful completion
-    Args: NA
+    Args: parallel_flag => optional flag to run the parallelized LSF version of
+                           blast
+          seqs_per_file => if running in parallel the number of seqs for each
+                           split fasta file
 	Throws: NA
 	Comments: There are four output files: 2 fasta files and 2 otu table files.
               Each pair of output files consists of both a contaminant file and 
               a non-contaminant file.
+              
+              The parallized version is only compatable on LSF cluster systems
+              and users will likely have to edit the source code to match their
+              system environment.  The parallelized algorithm simply splits the
+              input fasta file into (# of seqs / seqs per file) files and
+              submits each of those jobs to the cluster.
 	See Also: NA
     
 =head2 set_blast_db
@@ -813,6 +989,35 @@ None reported.
               parsed by _parse_blast_file
 	See Also: NA
     
+=head2 _run_parallel_blast
+
+    Title: _run_parallel_blast
+    Usage: $contam_filter->_run_parallel_blast($seqs_per_file);
+    Function: Runs command line blast program by spliting the input fasta into
+              (# of seqs / seqs per file) files and submits each file as a
+              seperate blast job to the LSF cluster.  
+    Returns: Blast output file
+    Args: seqs_per_file => the number of seqs in each jobs fasta file
+	Throws: NA
+	Comments: The blast output file is a tempfile.  It is returned so it can be
+              parsed by _parse_blast_file.
+              
+              Users will likely need to edit the source code in this method to
+              match their LSF environment (i.e. queue names, etc).
+	See Also: NA
+    
+=head2 _split_FASTAs
+
+    Title: _split_FASTAs
+    Usage: $contam_filter->_split_FASTAs($seqs_per_file);
+    Function: Splits the fasta file (path stored in the $contam_filter object)
+              into (# of seqs / seqs per file) files
+    Returns: Directory path to all the fasta files
+    Args: seqs_per_file => the number of seqs in each jobs fasta file
+	Throws: NA
+	Comments: NA
+	See Also: NA
+    
 =head2 _parse_blast_file
 
     Title: _parse_blast_file
@@ -860,6 +1065,28 @@ None reported.
 	Throws: NA
 	Comments: Prints two files: a contaminant file and a non_contaminant file.
               Both are tab delimited otu table text files.
+	See Also: NA
+    
+=head2 _check_blastn_exe
+
+    Title: _check_blastn_exe
+    Usage: _check_blastn_exe();
+    Function: Checks there is an executable version of blastn available
+    Returns: 1 on successful completion
+    Args: NA
+	Throws: NA
+	Comments: NA
+	See Also: NA
+    
+=head2 _check_bsub_exe
+
+    Title: _check_bsub_exe
+    Usage: _check_bsub_exe();
+    Function: Checks there is an executable version of bsub available
+    Returns: 1 on successful completion
+    Args: NA
+	Throws: NA
+	Comments: This applies only to LSF cluster systems
 	See Also: NA
     
 

@@ -4,10 +4,10 @@ use warnings;
 use strict;
 use Readonly;
 use Class::Std::Utils;
-use MyX::Generic 1.0.7;
+use MyX::Generic 1.0.8;
 use Exporter qw( import );
 our @EXPORT_OK = qw( nuc_str_to_iupac iupac_to_nuc_str );
-use version; our $VERSION = qv('1.0.7');
+use version; our $VERSION = qv('1.0.8');
 
 
 {
@@ -122,7 +122,7 @@ BioUtils::Codec::IUPAC - Converts between residues and IUPAC codes
 
 =head1 VERSION
 
-This document describes BioUtils::Codec::IUPAC version 1.0.7
+This document describes BioUtils::Codec::IUPAC version 1.0.8
 
 
 =head1 SYNOPSIS
@@ -171,7 +171,7 @@ variables.
 
 	Readonly
 	Class::Std::Utils
-	MyX::Generic 1.0.7
+	MyX::Generic 1.0.8
 	Exporter qw( import )
 	version
 	use Readonly;

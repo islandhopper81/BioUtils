@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 use BioUtils::FastqSeq;
-use Test::More tests => 65;
+use Test::More tests => 74;
 use Test::Exception;
 
 BEGIN { use_ok( 'BioUtils::FastqSeq' ); }
@@ -12,7 +12,11 @@ BEGIN { use_ok( 'BioUtils::FastqSeq' ); }
 my $header = '@Seq1 Homo Sapien';
 my $seq = "ATCG";
 my $quals_str = "1234";
-my $fastq_seq = BioUtils::FastqSeq->new({header => $header, seq => $seq, quals_str => $quals_str});
+my $fastq_seq = BioUtils::FastqSeq->new({
+    header => $header,
+    seq => $seq,
+    quals_str => $quals_str
+});
 
 # Test the simple getter methods
 lives_ok( sub { $fastq_seq->get_header() }, "expected to live" );
@@ -127,11 +131,11 @@ is( BioUtils::FastqSeq::_dec_to_encoding(0), '!', "_dec_to_encoding(0)" );
     
     # test when no parameter is given
     lives_ok( sub{ $trimmed_obj = $seq_obj->trim_front() },
-              "trim_front() - throws" );
-    is( $trimmed_obj->get_seq(), "", "trim_front(2) - check trimmed seq" );
-    is( $trimmed_obj->get_quals_str(), "", "trim_front(2) - check qual seq" );
-    is( $seq_obj->get_seq(), "ATCGATCG", "trim_front(2) - check kept seq" );
-    is( $seq_obj->get_quals_str(), "AAAABBBB", "trim_front(2) - check kept quals" );
+              "trim_front() - lives" );
+    is( $trimmed_obj->get_seq(), "", "trim_front() - check trimmed seq" );
+    is( $trimmed_obj->get_quals_str(), "", "trim_front() - check qual seq" );
+    is( $seq_obj->get_seq(), "ATCGATCG", "trim_front() - check kept seq" );
+    is( $seq_obj->get_quals_str(), "AAAABBBB", "trim_front() - check kept quals" );
     
     # test when a string is given as a param
     throws_ok( sub{ $seq_obj->trim_front('a') },
@@ -172,7 +176,7 @@ is( BioUtils::FastqSeq::_dec_to_encoding(0), '!', "_dec_to_encoding(0)" );
     
     my $trimmed_obj;
     
-     # test when no parameter is given
+    # test when no parameter is given
     lives_ok( sub{ $trimmed_obj = $seq_obj->trim_back() },
               "trim_back() - throws" );
     is( $trimmed_obj->get_seq(), "", "trim_back(2) - check trimmed seq" );
@@ -203,6 +207,69 @@ is( BioUtils::FastqSeq::_dec_to_encoding(0), '!', "_dec_to_encoding(0)" );
     is( $trimmed_obj->get_quals_str(), "BB", "trim_back(2) - check qual seq" );
     is( $seq_obj->get_seq(), "ATCGAT", "trim_back(2) - check kept seq" );
     is( $seq_obj->get_quals_str(), "AAAABB", "trim_back(2) - check kept quals" );
+}
+
+
+# test rev method
+{
+    my $header = "seq1";
+    my $seq = "ATCGATCG";
+    my $qual = "AAAABBBB";
+    
+    my $seq_obj = BioUtils::FastqSeq->new({
+        header => $header,
+        seq => $seq,
+        quals_str => $qual,
+    });
+    
+    # test when no parameter is given
+    lives_ok( sub{ $seq_obj->rev() },
+              "rev() - lives" );
+    is( $seq_obj->get_seq(), (scalar reverse $seq), "rev() - get_seq" );
+    is( $seq_obj->get_quals_str(), (scalar reverse $qual),
+       "rev() - get_quals_str" );
+}
+
+# test comp method
+{
+    my $header = "seq1";
+    my $seq = "ATCGATCG";
+    my $seq_comp = "TAGCTAGC";
+    my $qual = "AAAABBBB";
+    
+    my $seq_obj = BioUtils::FastqSeq->new({
+        header => $header,
+        seq => $seq,
+        quals_str => $qual,
+    });
+    
+    # test when no parameter is given
+    lives_ok( sub{ $seq_obj->comp() },
+              "comp() - lives" );
+    is( $seq_obj->get_seq(), $seq_comp, "comp() - get_seq" );
+    is( $seq_obj->get_quals_str(), $qual,
+       "comp() - get_quals_str" );
+}
+
+# test rev_comp method
+{
+    my $header = "seq1";
+    my $seq = "ATCGATCG";
+    my $seq_rev_comp = "CGATCGAT";
+    my $qual = "AAAABBBB";
+    
+    my $seq_obj = BioUtils::FastqSeq->new({
+        header => $header,
+        seq => $seq,
+        quals_str => $qual,
+    });
+    
+    # test when no parameter is given
+    lives_ok( sub{ $seq_obj->rev_comp() },
+              "rev_comp() - lives" );
+    is( $seq_obj->get_seq(), $seq_rev_comp, "rev_comp() - get_seq" );
+    is( $seq_obj->get_quals_str(), (scalar reverse $qual),
+       "rev_comp() - get_quals_str" );
 }
 
 
