@@ -5,9 +5,9 @@
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('1.0.7');
+use version; our $VERSION = qv('1.0.8');
 
-use BioUtils::QC::FastqFilter 1.0.7;
+use BioUtils::QC::FastqFilter 1.0.8;
 use Getopt::Long;
 use Carp qw(cluck);
 use Pod::Usage;
@@ -172,10 +172,10 @@ fastq_filter - Filter FASTQ sequences
 
 =head1 VERSION
 
-This documentation refers to fastq_filter.pl version 1.0.7
+This documentation refers to fastq_filter.pl version 1.0.8
 
 
-=head1 USAGE
+=head1 SYNOPSIS
 
     fastq_filter --output_dir --input_file [--input_file2] --min_length
                  --min_average_qual --min_base_qual --allow_gaps
@@ -296,7 +296,7 @@ version
 Getopt::Long
 Carp qw(cluck)
 Pod::Usage
-BioUtils::QC::FastqFilter 1.0.7
+BioUtils::QC::FastqFilter 1.0.8
 
 
 =head1 AUTHOR

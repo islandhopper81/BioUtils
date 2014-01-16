@@ -1,8 +1,9 @@
 
-use BioUtils::QC::ContaminantFilter 1.0.7;
-use Test::More tests => 43;
+use BioUtils::QC::ContaminantFilter 1.0.8;
+use Test::More tests => 51;
 use Test::Exception;
 use File::Temp qw(tempfile tempdir);
+use IPC::Cmd qw(can_run);
 
 sub _create_seq_file;
 sub _create_otu_table_file;
@@ -134,6 +135,30 @@ my $blast_output;
     #print "blast_output: $blast_output\n";
 }
 
+# test split_FASTAs
+{
+    # split_FASTAs is only used in _run_parallel_blast
+    my $tmp_dir;
+    lives_ok( sub{ $tmp_dir = $filter->_split_FASTAs(2) },
+             '_split_FASTAs() - lives' );
+
+    is( -s "$tmp_dir/1.fasta" > 0, 1, '1.fasta created' );
+    is( -s "$tmp_dir/2.fasta" > 0, 1, '2.fasta created' );
+    is( -s "$tmp_dir/3.fasta" > 0, 1, '3.fasta created' );
+    is( -s "$tmp_dir/4.fasta" > 0, 1, '4.fasta created' );
+    is( -s "$tmp_dir/5.fasta" > 0, 1, '5.fasta created' );
+}
+
+# test _run_parallel_blast
+SKIP: {
+    skip "Not on LSF cluster", 2 if (! can_run("bsub"));
+    
+    lives_ok( sub{ $blast_output = $filter->_run_parallel_blast(2) },
+             '_run_parallel_blast() - lives' );
+    
+    is( -s $blast_output > 0, 1, 'blast file created');
+}
+
 
 # test _parse_blast_file
 my $got; # This is also used in _sequence_printing
@@ -252,7 +277,6 @@ my $got; # This is also used in _sequence_printing
     is( -s "$new_output_dir/test_non_contaminants_otu_table.txt" > 0, 1,
        'non_contaminants_otu_table file created');
 }
-
 
 
 

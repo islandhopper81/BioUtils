@@ -1,5 +1,15 @@
 Revision history for BioUtils
 
+1.0.8	________
+    - Added LSF Parallel options for contaminant removal via blast
+	- Added libraries for Alignment operations including
+		- Needleman-Wunsch
+		- Smith-Waterman
+		- Ojects the hold aligned sequences
+	- Added an entropy calculator based on Shannon entropy
+	- Added trimming methods to Fast*Seq objects
+	- New Consnesus Building methods (untested)
+
 1.0.7	Sat Aug 24, 2013
     - Added dependancy build to Build.PL
 	- Added Fastq Filter options for c_scores	

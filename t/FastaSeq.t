@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 use BioUtils::FastaSeq;
-use Test::More tests => 36;
+use Test::More tests => 42;
 use Test::Exception;
 
 BEGIN { use_ok( 'BioUtils::FastaSeq' ); }
@@ -123,5 +123,57 @@ throws_ok( sub { $fasta_seq->get_id() }, qr/Undefined header/, "get_id() - caugh
     is( $trimmed_obj->get_seq(), "CG", "trim_back(2) - check trimmed seq" );
     is( $seq_obj->get_seq(), "ATCGAT", "trim_back(2) - check kept seq" );
 }
+
+
+# test rev method
+{
+    my $header = "seq1";
+    my $seq = "ATCGATCG";
+    
+    my $seq_obj = BioUtils::FastaSeq->new({
+        header => $header,
+        seq => $seq,
+    });
+    
+    # test when no parameter is given
+    lives_ok( sub{ $seq_obj->rev() },
+              "rev() - lives" );
+    is( $seq_obj->get_seq(), (scalar reverse $seq), "rev() - get_seq" );
+}
+
+# test comp method
+{
+    my $header = "seq1";
+    my $seq = "ATCGATCG";
+    my $seq_comp = "TAGCTAGC";
+    
+    my $seq_obj = BioUtils::FastaSeq->new({
+        header => $header,
+        seq => $seq,
+    });
+    
+    # test when no parameter is given
+    lives_ok( sub{ $seq_obj->comp() },
+              "comp() - lives" );
+    is( $seq_obj->get_seq(), $seq_comp, "comp() - get_seq" );
+}
+
+# test rev_comp method
+{
+    my $header = "seq1";
+    my $seq = "ATCGATCG";
+    my $seq_rev_comp = "CGATCGAT";
+    
+    my $seq_obj = BioUtils::FastaSeq->new({
+        header => $header,
+        seq => $seq,
+    });
+    
+    # test when no parameter is given
+    lives_ok( sub{ $seq_obj->rev_comp() },
+              "rev_comp() - lives" );
+    is( $seq_obj->get_seq(), $seq_rev_comp, "rev_comp() - get_seq" );
+}
+
 
 

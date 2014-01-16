@@ -1,6 +1,6 @@
 package MyX::Generic;
 
-use version; our $VERSION = qv('1.0.7');
+use version; our $VERSION = qv('1.0.8');
 
 use Exception::Class (
     'MyX::Generic' => {
@@ -115,7 +115,7 @@ different objects
 
 =head1 VERSION
 
-This documentation refers to MyX::Generic version 1.0.7.
+This documentation refers to MyX::Generic version 1.0.8.
 
 =head1 Included Modules
 
