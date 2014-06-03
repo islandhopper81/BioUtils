@@ -20,8 +20,8 @@ can_ok( __PACKAGE__, 'iupac_to_nuc_str');
     dies_ok( sub { nuc_str_to_iupac("X") }, 'Expect to die' );
     throws_ok( sub { nuc_str_to_iupac("X") }, 'MyX::Generic::BadValue',
               'Caught MyX::Generic::BadValue' );
-    throws_ok( sub { nuc_str_to_iupac("X") }, qr/Unrecignized nucleotide base/,
-              'Unrecignized nucleotide base' );
+    throws_ok( sub { nuc_str_to_iupac("X") }, qr/Unrecognized nucleotide base/,
+              'Unrecognized nucleotide base' );
     throws_ok( sub { nuc_str_to_iupac() }, 'MyX::Generic::Undef::Param',
               'Caught MyX::Generic::Undef::Param' );
     

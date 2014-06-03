@@ -3,7 +3,7 @@ package BioUtils::QC::FastqFilter;
 use warnings;
 use strict;
 
-use version; our $VERSION = qv('1.0.8');
+use version; our $VERSION = qv('1.0.9');
 
 use Class::Std::Utils;
 use Scalar::Util qw(looks_like_number);
@@ -15,7 +15,7 @@ use Data::Dumper qw(Dumper);
 use Readonly;
 use Cwd;
 use File::Basename;
-use BioUtils::FastqIO 1.0.8;
+use BioUtils::FastqIO 1.0.9;
 use BioUtils::Codec::QualityScores qw(illumina_1_8_to_int);
 use MyX::Generic;
 
@@ -24,6 +24,7 @@ use MyX::Generic;
     Readonly my $NEW_USAGE => q{ new( {fastq_file => ,
             output_dir => ,
             [fastq_file2 => ,]
+            [trim_to_base => ,]
             [min_len => ],
             [min_avg_qual => ],
             [min_base_qual => ],
@@ -38,6 +39,7 @@ use MyX::Generic;
     my %fastq_file_of;
     my %fastq_file2_of;
     my %output_dir_of;
+    my %trim_to_base_of;
     my %min_len_of;
     my %min_avg_qual_of;
     my %min_base_qual_of;
@@ -50,6 +52,7 @@ use MyX::Generic;
     sub set_fastq_file;
     sub set_fastq_file2;
     sub set_output_dir;
+    sub set_trim_to_base;
     sub set_min_len;
     sub set_min_avg_qual;
     sub set_min_base_qual;
@@ -62,6 +65,7 @@ use MyX::Generic;
     sub get_fastq_file;
     sub get_fastq_file2;
     sub get_output_dir;
+    sub get_trim_to_base;
     sub get_min_len;
     sub get_min_avg_qual;
     sub get_min_base_qual;
@@ -75,6 +79,7 @@ use MyX::Generic;
     sub filter_pairs;
     sub _make_io_objs;
     sub _make_pairs_io_objs;
+    sub _trim;
     sub _test_seq;
     sub _init;
     sub _too_short;
@@ -125,6 +130,8 @@ use MyX::Generic;
         # Read in the sequences from $input_file
         # AND run each filter test
         SEQ: while ( my $fastq_seq = $in->get_next_seq() ) {
+            
+            $fastq_seq = $self->_trim($fastq_seq);
             
             my @diagnostics = ();
             my $seq_id = $fastq_seq->get_id();
@@ -200,11 +207,17 @@ use MyX::Generic;
             }
             
             # check that the fwd and rev ids match
-            if ( $fwd_seq->get_id() ne $rev_seq->get_id() ) {
-                carp("Fwd and Rev IDs do NOT match:\n" .
-                     "\tFWD: " . $fwd_seq->get_id() . "\n" .
-                     "\tREV: " . $rev_seq->get_id() . "\n");
-            }
+            # I comment this out because there are times when the names do not
+            #   match and I dno't want to overload the output with this warning
+            #if ( $fwd_seq->get_id() ne $rev_seq->get_id() ) {
+            #    carp("Fwd and Rev IDs do NOT match:\n" .
+            #         "\tFWD: " . $fwd_seq->get_id() . "\n" .
+            #         "\tREV: " . $rev_seq->get_id() . "\n");
+            #}
+            
+            # trim
+            $fwd_seq = $self->_trim($fwd_seq);
+            $rev_seq = $self->_trim($rev_seq);
             
             my @diagnostics = ();
             my $seq_id = $fwd_seq->get_id() . "-" . $rev_seq->get_id();
@@ -355,6 +368,21 @@ use MyX::Generic;
                 $rev_in, $rev_out, $rev_LQ);
     }
     
+    sub _trim {
+        my ($self, $fastq_seq) = @_;
+        
+        if ( ! defined $self->get_trim_to_base() ) { return $fastq_seq; }
+        if ( $self->get_trim_to_base() =~ m/na/i ) { return $fastq_seq; }
+        
+        # The trim_front subroutine returns a FastqSeq object of the portion
+        #   that was trimmed off the front.  So I resent $fastq_seq to that
+        #   portion.  This is trimming off the first $self->get_trim_to_base()
+        #   bases and returning that as the new fastq_seq.  See doc for
+        #   BioUtils::FastqSeq for more info.
+
+        return $fastq_seq->trim_front($self->get_trim_to_base());
+    }
+    
     sub _test_seq {
         my ($self, $diag_aref, $id, $header, $seq_str, $quals_str, $verbose) = @_;
         
@@ -458,6 +486,7 @@ use MyX::Generic;
         $self->set_fastq_file($arg_href->{fastq_file});
         $self->set_fastq_file2($arg_href->{fastq_file2});
         $self->set_output_dir($arg_href->{output_dir});
+        $self->set_trim_to_base($arg_href->{trim_to_base});
         $self->set_min_len($arg_href->{min_len});
         $self->set_min_avg_qual($arg_href->{min_avg_qual});
         $self->set_min_base_qual($arg_href->{min_base_qual});
@@ -639,9 +668,27 @@ use MyX::Generic;
         return 1;
     }
     
+    sub set_trim_to_base {
+        my ($self, $last_base) = @_;
+
+        if ( defined $last_base and $last_base =~ m/na/i ) {
+            $last_base = undef;
+        }
+        
+        if ( defined $last_base and $last_base < 0 ) {
+            croak("trim_to_base must be > 0");
+        }
+        
+        $trim_to_base_of{ident $self} = $last_base;
+        
+        return 1;
+    }
+    
     sub set_min_len {
         my ($self, $min_len) = @_;
         # if min_len is not defined then we want to keep entire seq
+        
+        if ( defined $min_len and $min_len =~ m/na/i ) { $min_len = undef; }
 
         if ( defined $min_len and $min_len < 0 ) {
             croak("min_len must be > 0");
@@ -780,6 +827,11 @@ use MyX::Generic;
         return $output_dir_of{ident $self};
     }
     
+    sub get_trim_to_base {
+        my ($self) = @_;
+        return $trim_to_base_of{ident $self};
+    }
+    
     sub get_min_len {
         my ($self) = @_;
         return $min_len_of{ident $self};
@@ -845,7 +897,7 @@ BioUtils::QC::FastqFilter - Filters seqs in a Fastq file based on quality
 
 =head1 VERSION
 
-This document describes BioUtils::QC::FastqFilter version 1.0.8
+This document describes BioUtils::QC::FastqFilter version 1.0.9
 
 
 =head1 SYNOPSIS
@@ -855,7 +907,8 @@ This document describes BioUtils::QC::FastqFilter version 1.0.8
     my $filter = BioUtils::QC::FastqFilter->new({
                     fastq_file => $fastq_file,
                     output_dir => $output_dir,
-                    [fastq_file2] => $rev_file,
+                    [trim_to_base => $last_base],
+                    [fastq_file2 => $rev_file],
                     [min_len => $min_len],
                     [min_avg_qual => $min_avg_qual],
                     [min_base_qual => $min_base_qual],
@@ -894,6 +947,7 @@ not possible to apply filters baesed on individual FWD or REV reads.
     set_fastq_file
     set_fastq_file2
     set_output_dir
+    set_trim_to_base
     set_min_len
     set_min_avg_qual
     set_min_base_qual
@@ -906,6 +960,7 @@ not possible to apply filters baesed on individual FWD or REV reads.
     get_fastq_file
     get_fastq_file2
     get_output_dir
+    get_trim_to_base
     get_min_len
     get_min_avg_qual
     get_min_base_qual
@@ -917,6 +972,7 @@ not possible to apply filters baesed on individual FWD or REV reads.
     # Private #
     _make_io_objs
     _make_pairs_io_objs
+    _trim
     _test_seq
     _init
     _too_short
@@ -1035,7 +1091,7 @@ will fail if 'grep' cannot be found as a system command.
     Readonly
     Cwd
     File::Basename
-    BioUtils::FastqIO 1.0.8
+    BioUtils::FastqIO 1.0.9
     BioUtils::Codec::QualityScores qw(illumina_1_8_to_int)
     MyX::Generic
 
@@ -1054,6 +1110,7 @@ will fail if 'grep' cannot be found as a system command.
                             fastq_file => $fastq_file,
                             fastq_file2 => $fastq_file2,
                             output_dir => $output_dir,
+                            [trim_to_base => $last_base],
                             [min_len => $min_len],
                             [min_avg_qual => $min_avg_qual],
                             [min_base_qual => $min_base_qual],
@@ -1147,6 +1204,19 @@ will fail if 'grep' cannot be found as a system command.
           fwd_prefix => prefix of the input fwd fastq file
           rev_prefix => prefix of the input rev fastq file
           verbose => verbose attribute
+	Throws: NA
+	Comments: NA
+	See Also: NA
+    
+=head2 _trim
+
+	Title: _trim
+	Usage: my $fastq_seq_obj = $self->_trim($fastq_seq_obj);
+	Function: Trims the fastq_seq_obj to the base stored in trim_to_base
+              attribute.
+	Returns: BioUtils::FastqSeq object where the sequence and qual values are of
+             length trim_to_base, the attribute stored in this object
+	Args: fastq_seq_obj => BioUtils::Fastq object
 	Throws: NA
 	Comments: NA
 	See Also: NA
@@ -1325,6 +1395,18 @@ will fail if 'grep' cannot be found as a system command.
 	Comments: NA
 	See Also: NA
     
+=head2 set_trim_to_base
+
+	Title: set_trim_to_base
+	Usage: $filter->set_trim_to_base($last_base);
+	Function: Before running filtering protcol trim the sequence to the given
+              index.
+	Returns: 1 on successful completion
+	Args: -last_base => int representing the index of the last base to keep
+	Throws: croak("min_len must be > 0")
+	Comments: NA
+	See Also: NA
+    
 =head2 set_min_len
 
 	Title: set_min_len
@@ -1430,6 +1512,17 @@ will fail if 'grep' cannot be found as a system command.
 	Usage: my $output_dir = $filter->get_output_dir();
 	Function: Gets the fastq file path
 	Returns: String
+	Args: NA
+	Throws: NA
+	Comments: NA
+	See Also: NA
+
+=head2 get_trim_to_base
+
+	Title: get_trim_to_base
+	Usage: my $last_base = $filter->get_trim_to_base();
+	Function: Gets the trim_to_base attribute value
+	Returns: Int
 	Args: NA
 	Throws: NA
 	Comments: NA

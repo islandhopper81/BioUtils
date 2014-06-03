@@ -4,10 +4,10 @@ use warnings;
 use strict;
 use Readonly;
 use Class::Std::Utils;
-use MyX::Generic 1.0.8;
+use MyX::Generic 1.0.9;
 use Exporter qw( import );
 our @EXPORT_OK = qw( nuc_str_to_iupac iupac_to_nuc_str );
-use version; our $VERSION = qv('1.0.8');
+use version; our $VERSION = qv('1.0.9');
 
 
 {
@@ -53,7 +53,7 @@ use version; our $VERSION = qv('1.0.8');
 		else {
 			# the parameter is not a nucleotide base
 			MyX::Generic::BadValue->throw(
-				error => "Unrecignized nucleotide base",
+				error => "Unrecognized nucleotide base",
 				value => $str,
 			);
 			
@@ -122,7 +122,7 @@ BioUtils::Codec::IUPAC - Converts between residues and IUPAC codes
 
 =head1 VERSION
 
-This document describes BioUtils::Codec::IUPAC version 1.0.8
+This document describes BioUtils::Codec::IUPAC version 1.0.9
 
 
 =head1 SYNOPSIS
@@ -171,7 +171,7 @@ variables.
 
 	Readonly
 	Class::Std::Utils
-	MyX::Generic 1.0.8
+	MyX::Generic 1.0.9
 	Exporter qw( import )
 	version
 	use Readonly;

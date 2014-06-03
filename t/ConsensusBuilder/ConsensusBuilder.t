@@ -9,8 +9,9 @@ use BioUtils::Codec::QualityScores qw( int_to_illumina_1_8 illumina_1_8_to_int )
 use Data::Dumper qw( Dumper );
 use File::Temp qw{tempfile};
 
-use Test::More tests => 34;
+use Test::More tests => 47;
 use Test::Exception;
+use Test::Warn;
 
 # The use_ok does not work with exported methods
 BEGIN { use_ok( 'BioUtils::ConsensusBuilder::ConsensusBuilder'); }
@@ -38,10 +39,10 @@ $qualsHash{'Seq1'} = \@seq1;
 $qualsHash{'Seq2'} = \@seq2;
 $qualsHash{'Seq3'} = \@seq3;
 
-my $consensus = buildFromClustalwFile($file1, \%qualsHash);
-is( $consensus->get_seq(), "AATTCCGG", "buildConFromFile() -- AATTCCGG" );
-is( $consensus->get_quals_aref->[1], int_to_illumina_1_8(40), "buildConFromFile() -- conQuals[0]" );
-is( $consensus->get_c_score(), (40*8)/8, "buildConFromFile() -- get_c_score()" );
+my $consensus = build_con_from_file($file1, "gde", \%qualsHash);
+is( $consensus->get_seq(), "AATTCCGG", "build_con_from_file() -- AATTCCGG" );
+is( $consensus->get_quals_aref->[1], int_to_illumina_1_8(40), "build_con_from_file() -- conQuals[0]" );
+is( $consensus->get_c_score(), (40*8)/8, "build_con_from_file() -- get_c_score()" );
 
 ### Create a second temporary file representing a clustalw output file
 my ($fh2, $file2) = tempfile();
@@ -66,9 +67,9 @@ $qualsHash{'Seq2'} = \@seq2;
 $qualsHash{'Seq3'} = \@seq3;
 $qualsHash{'Seq4'} = \@seq4;
 
-$consensus = buildFromClustalwFile($file2, \%qualsHash);
-is( $consensus->get_seq(), "AATTCCGK", "buildConFromFile() -- AATTCCGG" );
-is( $consensus->get_quals_aref->[0], int_to_illumina_1_8(36), "buildConFromFile() -- conQuals[0]" );
+$consensus = build_con_from_file($file2, "gde", \%qualsHash);
+is( $consensus->get_seq(), "AATTCCGK", "build_con_from_file() -- AATTCCGG" );
+is( $consensus->get_quals_aref->[0], int_to_illumina_1_8(36), "build_con_from_file() -- conQuals[0]" );
 
 ### Test this pair of full length sequences using the clustalw approach.
 # They were giving me problems.
@@ -101,9 +102,75 @@ my @quals_arr2 = split //, $quals_str2;
 $qualsHash{'1_1_13352_2073'} = \@quals_arr1;
 $qualsHash{'1_1_13352_2074'} = \@quals_arr2;
 
-$consensus = buildFromClustalwFile($file3, \%qualsHash);
-is( $consensus->get_seq(), "$seq1", "buildConFromFile() -- long sequence" );
-#is( $consensus->get_quals_aref->[0], int_to_illumina_1_8(36), "buildConFromFile() -- conQuals[0]" );
+$consensus = build_con_from_file($file3, "gde", \%qualsHash);
+is( $consensus->get_seq(), "$seq1", "build_con_from_file() -- long sequence" );
+#is( $consensus->get_quals_aref->[0], int_to_illumina_1_8(36), "build_con_from_file() -- conQuals[0]" );
+
+
+
+### Create a temporary file representing a fasta output file like muscle would generate
+my ($fh4, $file4) = tempfile();
+print $fh4 ">Seq1
+TATTCCGG
+>Seq2 blah
+AAT-CCGG
+>Seq3
+AATTCCGT
+>Seq4
+AATTCCGT";
+close($fh4);
+
+%qualsHash = ();
+@seq1 = map ( int_to_illumina_1_8($_), (40,40,40,40,40,40,40,40) );
+@seq2 = map ( int_to_illumina_1_8($_), (40,40,40,40,40,40,40,40) );
+@seq3 = map ( int_to_illumina_1_8($_), (30,40,40,40,40,40,40,40) );
+@seq4 = map ( int_to_illumina_1_8($_), (40,40,40,40,40,40,40,40) );
+
+$qualsHash{'Seq1'} = \@seq1;
+$qualsHash{'Seq2'} = \@seq2;
+$qualsHash{'Seq3'} = \@seq3;
+$qualsHash{'Seq4'} = \@seq4;
+
+$consensus = build_con_from_file($file4, "fasta", \%qualsHash);
+is( $consensus->get_seq(), "AATTCCGK", "build_con_from_file() -- AATTCCGG" );
+is( $consensus->get_quals_aref->[0], int_to_illumina_1_8(36), "build_con_from_file() -- conQuals[0]" );
+
+
+
+### Create a temporary file representing a fastq
+my ($fh5, $file5) = tempfile();
+print $fh5 "\@Seq1
+TATTCCGG
+\@
+IIIIIIII
+\@Seq2 blah
+AAT-CCGG
+\@
+?IIIIIII
+\@Seq3
+AATTCCGT
+\@
+IIIIIIII
+\@Seq4
+AATTCCGT
+\@
+IIIIIIII";
+close($fh5);
+
+%qualsHash = ();
+@seq1 = map ( int_to_illumina_1_8($_), (40,40,40,40,40,40,40,40) );
+@seq2 = map ( int_to_illumina_1_8($_), (40,40,40,40,40,40,40,40) );
+@seq3 = map ( int_to_illumina_1_8($_), (30,40,40,40,40,40,40,40) );
+@seq4 = map ( int_to_illumina_1_8($_), (40,40,40,40,40,40,40,40) );
+
+$qualsHash{'Seq1'} = \@seq1;
+$qualsHash{'Seq2'} = \@seq2;
+$qualsHash{'Seq3'} = \@seq3;
+$qualsHash{'Seq4'} = \@seq4;
+
+$consensus = build_con_from_file($file5, "fastq", \%qualsHash);
+is( $consensus->get_seq(), "AATTCCGK", "build_con_from_file() -- AATTCCGG" );
+is( $consensus->get_quals_aref->[0], int_to_illumina_1_8(36), "build_con_from_file() -- conQuals[0]" );
 
 ###################
 # I have written some new methods to build a consensus sequence from FastQ objs.
@@ -111,50 +178,97 @@ is( $consensus->get_seq(), "$seq1", "buildConFromFile() -- long sequence" );
 
 # build 2 fastqSeq objects for testing
 my $s1_obj = BioUtils::FastqSeq->new({
-                header => "seq1",
-                seq => "ATCG",
-                quals_str => "DDDD",
-                });
-
+    header => "seq1",
+    seq => "ATCG",
+    quals_str => "DDDD",
+});
 my $s2_obj = BioUtils::FastqSeq->new({
-                header => "seq2",
-                seq => "ATCT",
-                quals_str => "DDDC",
-                });
+    header => "seq2",
+    seq => "ATCT",
+    quals_str => "DDDC",
+});
+my $s3_obj = BioUtils::FastqSeq->new({
+    header => "seq3",
+    seq => "ATC",
+    quals_str => "DDD"
+});
+my $s4_obj = BioUtils::FastqSeq->new({
+    header => "seq4",
+    seq => "ATCG",
+    quals_str => "DDD"
+});
+
+# add the normal sequences
 my @seqs_arr = ($s1_obj, $s2_obj);
+
+
+# test _build_len_dist
+{
+    my @seqs_arr = ($s1_obj, $s2_obj);
+    my $dist_hr;
+    my $seq_count = @seqs_arr;
+    
+    lives_ok( sub{ $dist_hr = BioUtils::ConsensusBuilder::ConsensusBuilder::_build_len_dist( \@seqs_arr, $seq_count ) },
+             "_build_len_dist -- lives" );
+    my %ans = (4 => ["seq1", "seq2"]);
+    is_deeply( $dist_hr, \%ans, "_build_len_dist -- two equal seqs" );
+    
+    @seqs_arr = ($s1_obj, $s2_obj, $s3_obj);
+    $seq_count = @seqs_arr;
+    lives_ok( sub{ $dist_hr = BioUtils::ConsensusBuilder::ConsensusBuilder::_build_len_dist( \@seqs_arr, $seq_count ) },
+             "_build_len_dist -- lives" );
+    %ans = (4 => ["seq1", "seq2"], 3 => ["seq3"]);
+    is_deeply ($dist_hr, \%ans, "_build_len_dist -- add a thrid unequal seq" );
+}
+
+# test _check_aln_len
+{
+    my @seqs_arr = ($s1_obj, $s2_obj);
+    my $seq_count = @seqs_arr;
+    my $dist_hr = BioUtils::ConsensusBuilder::ConsensusBuilder::_build_len_dist( \@seqs_arr, $seq_count );
+    my $aln_len;
+    
+    lives_ok( sub{ $aln_len = BioUtils::ConsensusBuilder::ConsensusBuilder::_check_aln_len( $dist_hr ) },
+             "_check_aln_len -- lives" );
+    is( $aln_len, 4, "_check_aln_len -- aln_len = 4" );
+    
+    # add a seq that makes the alignment not square
+    push @seqs_arr, $s3_obj;
+    $seq_count++;
+    $dist_hr = BioUtils::ConsensusBuilder::ConsensusBuilder::_build_len_dist( \@seqs_arr, $seq_count );
+    warnings_are  {$aln_len = BioUtils::ConsensusBuilder::ConsensusBuilder::_check_aln_len( $dist_hr ) } [
+                            "WARNING ($0): Alignment not square.  Ignoring seqs:",
+                            "\tseq3"],
+                    "warnings thrown";
+    
+}
 
 # test build_consensus_from_aref
 {
-    my @seq_arr = ($s1_obj, $s2_obj);
+    my @seqs_arr = ($s1_obj, $s2_obj);
     my $con;
     lives_ok( sub{ $con = build_consensus( \@seqs_arr ) },
              "build_consensus(aref) -- lives" );
     is( $con->get_seq(), "ATCG", "testing con base accuracy" );
     is( $con->get_quals_str(), "DDDD", "testing con quals accuracy" );
-}
-
-# test when seqs are not square
-{
-    $s1_obj->set_seq("A");
-    $s1_obj->set_quals_str("D");
-    throws_ok( sub{ build_consensus(\@seqs_arr) },
-              "BioUtils::MyX::ConsensusBuilder::SeqsNotSqr",
-              "build_consensus(SeqsNotSqr) - caught" );
-    throws_ok( sub{ build_consensus(\@seqs_arr) },
-              qr/Alignment seqs are not square/,
-              "build_consensus(SeqsNotSqr) - caught" );
-}
-
-# test when quals are not square
-{
-    $s1_obj->set_seq("ATCG");
-    $s1_obj->set_quals_str("DD");
-    throws_ok( sub{ build_consensus(\@seqs_arr) },
-              "BioUtils::MyX::ConsensusBuilder::QualsNotSqr",
-              "build_consensus(QualsNotSqr) - caught" );
-    throws_ok( sub{ build_consensus(\@seqs_arr) },
-              qr/Alignment quals are not square/,
-              "build_consensus(QualsNotSqr) - caught" );
+    
+    # add a seq that makes the alignment not square
+    push @seqs_arr, $s3_obj;
+    warnings_are  {$con = build_consensus( \@seqs_arr ) } [
+                            "WARNING ($0): Alignment not square.  Ignoring seqs:",
+                            "\tseq3"],
+                    "warnings thrown";
+    is( $con->get_seq(), "ATCG", "removes seq3 correctly -- seq" );
+    is( $con->get_quals_str(), "DDDD", "removes seq3 correctly -- quals" );
+    
+    # add a seq that has an unsquare number of quals
+    @seqs_arr = ($s1_obj, $s2_obj, $s4_obj);
+    warnings_are  {$con = build_consensus( \@seqs_arr ) } [
+                            "WARNING ($0): Seq len and qual len not equal",
+                            "\tseq4"],
+                    "warnings thrown";
+    is( $con->get_seq(), "ATCG", "removes seq3 correctly -- seq" );
+    is( $con->get_quals_str(), "DDDD", "removes seq3 correctly -- quals" );
 }
 
 # test when a hash ref is used

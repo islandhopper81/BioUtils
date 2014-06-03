@@ -6,12 +6,12 @@ use Carp qw(carp croak);
 use Class::Std::Utils;
 use Readonly;
 use List::MoreUtils qw(any);
-use MyX::Generic 1.0.8;
-use BioUtils::FastaSeq 1.0.8;
-use BioUtils::FastaIO 1.0.8;
+use MyX::Generic 1.0.9;
+use BioUtils::FastaSeq 1.0.9;
+use BioUtils::FastaIO 1.0.9;
 use File::Temp qw(tempfile);
 use IPC::Cmd qw(can_run);
-use version; our $VERSION = qv('1.0.8');
+use version; our $VERSION = qv('1.0.9');
 
 {
     Readonly my $NEW_USAGE => q{ new( {params_file => } ) };
@@ -319,9 +319,10 @@ use version; our $VERSION = qv('1.0.8');
         }
         
         # create temp directories
+        my $output_dir = $self->get_output_dir();
         my $fasta_dir = $self->_split_FASTAs($seqs_per_file);
-        my $log_dir = $self->get_output_dir() . "/tmp_logs";
-        my $blast_dir = $self->get_output_dir() . "/tmp_blasts";
+        my $log_dir = $output_dir . "/tmp_logs";
+        my $blast_dir = $output_dir . "/tmp_blasts";
         
         if ( ! -d $log_dir ) {system("mkdir $log_dir");}
         if ( ! -d $blast_dir ) {system("mkdir $blast_dir");}
@@ -341,8 +342,9 @@ use version; our $VERSION = qv('1.0.8');
         # build and run the parallel blast commands
         opendir (BLAST_DIR, "$fasta_dir")  or die $!;
         my @blast_files = grep { $_ =~ '.*\.fasta$' } readdir(BLAST_DIR);
+        close(BLAST_DIR);
     
-        foreach my $blast_file (@blast_files) {            
+        foreach my $blast_file (@blast_files) {
             my $command = "bsub -q week " .
                             "-o $log_dir/$blast_file.lsfout " .
                             "-e $log_dir/$blast_file.err " .
@@ -350,7 +352,7 @@ use version; our $VERSION = qv('1.0.8');
             
             $command .= "blastn " .
                       "-db $database " . 
-                      "-query $fasta_dir/$blast_file " .
+                      "-query $fasta_dir$blast_file " .
                       "-out $blast_dir/$blast_file.bls ";
         
             # add in optional paramters
@@ -368,24 +370,24 @@ use version; our $VERSION = qv('1.0.8');
             }
             
             print "BLAST Command:\n $command\n";
-            system("$command");
+            `$command`;
         }
-    
-        close(BLAST_DIR);
     
         my $active_job=1;
+        my $command = "bjobs -J parallelBLAST > " .
+                        "$output_dir/ACTIVE_JOB_CHECK";
         while ($active_job) {
             sleep(30);
-            system('bjobs -J parallelBLAST > ACTIVE_JOB_CHECK');
-            $active_job = -s "ACTIVE_JOB_CHECK";
+            system("$command 2> /dev/null");
+            $active_job = -s "$output_dir/ACTIVE_JOB_CHECK";
         }
-        system("rm ACTIVE_JOB_CHECK");
+        system("rm $output_dir/ACTIVE_JOB_CHECK");
         
         # Merge all the split blast output files into one
         system ("cat $blast_dir/*.bls > $output_file");
         
         # clean up the tmp directories.  Comment this line for debugging
-        #system("rm -rf $fasta_dir $blast_dir $log_dir");
+        system("rm -rf $fasta_dir $blast_dir $log_dir");
         
         return $output_file;
     }
@@ -569,7 +571,7 @@ BioUtils::QC::ContaminantFilter - Identifies and removes sequence contaminants
 
 =head1 VERSION
 
-This document describes BioUtils::QC::ContaminantFilter version 1.0.8
+This document describes BioUtils::QC::ContaminantFilter version 1.0.9
 
 
 =head1 Included Modules
@@ -579,8 +581,8 @@ This document describes BioUtils::QC::ContaminantFilter version 1.0.8
     Readonly
     List::MoreUtils qw(any)
     MyX::Generic
-    BioUtils::FastaSeq 1.0.8
-    BioUtils::FastaIO 1.0.8
+    BioUtils::FastaSeq 1.0.9
+    BioUtils::FastaIO 1.0.9
     File::Temp qw(tempfile)
     IPC::Cmd qw(can_run)
     version

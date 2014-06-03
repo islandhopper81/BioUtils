@@ -4,10 +4,10 @@ use warnings;
 use strict;
 use Readonly;
 use Class::Std::Utils;
-use MyX::Generic 1.0.8;
+use MyX::Generic 1.0.9;
 use Exporter qw( import );
 our @EXPORT_OK = qw( int_to_illumina_1_8 illumina_1_8_to_int );
-use version; our $VERSION = qv('1.0.8');
+use version; our $VERSION = qv('1.0.9');
 
 
 {
@@ -208,7 +208,7 @@ encoded formats
 
 =head1 VERSION
 
-This document describes BioUtils::Codec::QualityScores version 1.0.8
+This document describes BioUtils::Codec::QualityScores version 1.0.9
 
 
 =head1 SYNOPSIS
@@ -229,7 +229,7 @@ This document describes BioUtils::Codec::QualityScores version 1.0.8
     eval {
         my $int_score = illumina_1_8_to_int('!');
     };
-    if ( my $e = MyX::Generic::UnrecignizedChar->caught() ) {
+    if ( my $e = MyX::Generic::UnrecognizedChar->caught() ) {
         # handle exception
     }
     
@@ -249,7 +249,7 @@ This document describes BioUtils::Codec::QualityScores version 1.0.8
     eval {
         my $int_scores_aref = illumina_1_8_to_int($encoding_str);
     };
-    if ( my $e = MyX::Generic::UnrecignizedChar->caught() ) {
+    if ( my $e = MyX::Generic::UnrecognizedChar->caught() ) {
         # handle exception
     }
     
@@ -333,7 +333,7 @@ variables.
     Function: Looks up the int value for the given illumina_1.8 quality encoding
     Returns: Int
     Args: -qual => the encoded quality value to look up
-    Throws: MyX::Generic::UnrecignizedChar
+    Throws: MyX::Generic::UnrecognizedChar
     Comments: Must be between ! and ~
     See Also: NA
 
@@ -378,7 +378,7 @@ variables.
 	Function: Convert a character to an encoded illumina-1.8 quality score
 	Returns: int or array reference of ints
 	Args: -char => a string (any length) of encoded illumina-1.8 quality scores
-	Throws: MyX::Generic::UnrecignizedChar
+	Throws: MyX::Generic::UnrecognizedChar
 	Comments: NA
 	See Also: NA
 
