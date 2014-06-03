@@ -7,10 +7,11 @@ use Class::Std::Utils;
 use List::MoreUtils qw(any);
 use Readonly;
 use Carp qw(croak);
-use MyX::Generic 1.0.8;
-use BioUtils::FastqSeq 1.0.8;
+use Scalar::Util qw(openhandle);
+use MyX::Generic 1.0.9;
+use BioUtils::FastqSeq 1.0.9;
 
-use version; our $VERSION = qv('1.0.8');
+use version; our $VERSION = qv('1.0.9');
 
 {
     # Global variables
@@ -27,6 +28,7 @@ use version; our $VERSION = qv('1.0.8');
     
     # Private Class Methods
     sub _open_fh;
+    sub _close_fh;
     sub DESTROY;
     
     # Constructor
@@ -139,9 +141,21 @@ use version; our $VERSION = qv('1.0.8');
         return $fh;
     }
     
+    sub _close_fh {
+		my ($self) = @_;
+		
+        my $fh = $fh_of{ident $self};
+		if ( defined $fh and openhandle($fh) ) {
+			close($fh_of{ident $self});
+		}
+		
+		return 1;
+	}
+    
     sub DESTROY {
         my ($self) = @_;
         
+        $self->_close_fh();
         delete $stream_type_of{ident $self};
         delete $file_of{ident $self};
         delete $fh_of{ident $self};
@@ -158,7 +172,7 @@ BioUtils::FastqIO - An object for parsing FASTQ formated sequence files
 
 =head1 VERSION
 
-This documentation refers to BioUtils::FastqIO version 1.0.8.
+This documentation refers to BioUtils::FastqIO version 1.0.9.
 
 =head1 Included Modules
 
@@ -240,6 +254,7 @@ quality value string encodes a quality value score.
     get_next_seq
     write_seq
     _open_fh
+    _close_fh
     DESTROY
 
 
@@ -278,6 +293,33 @@ quality value string encodes a quality value score.
     Throws: MyX::Generic::Undef::Attribute
     Comments: NA
     See Also: NA
+    
+=head2 _open_fh
+
+	Title: _open_fh
+	Usage: my $fastq_in->_open_fh($file);
+	Function: Opens a file handle using the given file
+	Returns: the file handle variable
+	Args: -file => path to a file
+	Throws: NA
+	Comments: When a FastqIO object is create this method is automatically
+			  called and the file handle is stored as an attribute to this
+			  object.
+	See Also: NA
+	
+=head2 _close_fh
+
+	Title: _close_fh
+	Usage: my $fastq_in->_close_fh();
+	Function: Closes the file handle stored in this object
+	Returns: 1 on successful completion
+	Args: NA
+	Throws: NA
+	Comments: This method is called in DESTROY.  In rare cases when you open a
+			  file for writing and later use a differrent BioUtils::FastqIO
+			  object to read that file, it will be necessary to close the file
+			  handle of the original object if it is still in scope. 
+	See Also: NA
 
 =head2 DESTROY
     

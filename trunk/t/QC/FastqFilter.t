@@ -1,6 +1,6 @@
 
-use BioUtils::QC::FastqFilter 1.0.8;
-use Test::More tests => 134;
+use BioUtils::QC::FastqFilter 1.0.9;
+use Test::More tests => 142;
 use Test::Exception;
 use Test::Warn;
 use File::Temp qw/ tempfile tempdir /;
@@ -54,6 +54,24 @@ my $filter_g = BioUtils::QC::FastqFilter->new({
     # all good
     lives_ok( sub{$filter_g->set_output_dir($output_dir)},
              "set_output_dir - lives");
+}
+
+# test set_trim_to_base
+{
+    my $last_base = -2;
+    throws_ok( sub{$filter_g->set_trim_to_base($last_base)},
+              qr/trim_to_base must be > 0/,
+              "set_trim_to_base(-2) - throws");
+    
+    # all good
+    $last_base = 110;
+    lives_ok( sub{$filter_g->set_trim_to_base($last_base)},
+             "set_trim_to_base(110) - lives");
+    
+    # reset back to na
+    $last_base = "na";
+    lives_ok( sub{$filter_g->set_trim_to_base($last_base)},
+             "set_trim_to_base(na) - lives" );
 }
 
 # test set_min_len
@@ -369,6 +387,31 @@ my $filter_g = BioUtils::QC::FastqFilter->new({
     cmp_ok( -s $filename, ">", 0, "_print_diagnostics - file created" );
 }
 
+# test _trim
+{
+    my $fastq_seq = BioUtils::FastqSeq->new({header => 'temp1',
+                                             seq => 'ATCGT',
+                                             quals_str => 'DDDDD'
+                                             });
+    
+    # this test is first because it leaves fastq_seq unchanged
+    $filter_g->set_trim_to_base(8);  # set the trim_to_base value
+    lives_ok( sub{$fastq_seq = $filter_g->_trim($fastq_seq)},
+             "_trim(fastq_seq) - lives" );
+    is( $fastq_seq->get_seq(), "ATCGT", "_trim(fastq_seq) - seq is ATCGT");
+    is( $fastq_seq->get_quals_str(), "DDDDD", "_trim(fastq_seq) - seq is DDDDD");
+    
+    # note that fastq_seq is changed in this test
+    $filter_g->set_trim_to_base(4);  # set the trim_to_base value
+    lives_ok( sub{$fastq_seq = $filter_g->_trim($fastq_seq)},
+             "_trim(fastq_seq) - lives" );
+    is( $fastq_seq->get_seq(), "ATCG", "_trim(fastq_seq) - seq is ATCG");
+    is( $fastq_seq->get_quals_str(), "DDDD", "_trim(fastq_seq) - seq is DDDD");
+    
+    # reset the trim parameter to NA
+    $filter_g->set_trim_to_base("NA");
+}
+
 # test _test_seq
 {
     # make a local filter
@@ -515,12 +558,13 @@ my $filter_g = BioUtils::QC::FastqFilter->new({
               "throws - Mismatched Pairs: fewer fwd seqs");
     
     # test the mismatch of names warnings
-    warnings_exist{my ($fh2, $file2name) = tempfile();
-        _build_fastq_file5($fh2);
-        $filter_l->set_fastq_file2($file2name);
-        $filter_l->filter_pairs()}
-        [qr/Fwd and Rev IDs do NOT match:/],
-        "Warn - Fwd and Rev IDs do NOT match";
+    # I commented this part of the code out so I commented out this test
+    #warnings_exist{my ($fh2, $file2name) = tempfile();
+    #    _build_fastq_file5($fh2);
+    #    $filter_l->set_fastq_file2($file2name);
+    #    $filter_l->filter_pairs()}
+    #    [qr/Fwd and Rev IDs do NOT match:/],
+    #    "Warn - Fwd and Rev IDs do NOT match";
     
     # for clearity and testing I create a new output dir
     my $output_dir = tempdir();

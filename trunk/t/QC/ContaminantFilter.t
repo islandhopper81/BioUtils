@@ -1,5 +1,5 @@
 
-use BioUtils::QC::ContaminantFilter 1.0.8;
+use BioUtils::QC::ContaminantFilter 1.0.9;
 use Test::More tests => 51;
 use Test::Exception;
 use File::Temp qw(tempfile tempdir);
@@ -13,22 +13,22 @@ sub _create_blast_db;
 # Test use BioUtils::QC::ContaminantFilter
 BEGIN { use_ok( 'BioUtils::QC::ContaminantFilter'); }
 
+# Create the output dir in the current directory
+my $output_dir = tempdir(DIR => "./");  # temporary output dir
 
 # Create the temporary files used in testing
-my ($seq_fh, $seq_file) = tempfile();
+my ($seq_fh, $seq_file) = tempfile(DIR => $output_dir);
 _create_seq_file($seq_fh);
 
-my ($otu_table_fh, $otu_table_file) = tempfile();
+my ($otu_table_fh, $otu_table_file) = tempfile(DIR => $output_dir);
 _create_otu_table_file($otu_table_fh);
 
-my $blast_db_dir = tempdir();
+my $blast_db_dir = tempdir(DIR => $output_dir);
 my $blast_db_name = _create_blast_db($blast_db_dir);
-
-my $output_dir = tempdir();  # temporary output dir
 
 #print "seq_file: $seq_file\n";
 #print "otu_table_file: $otu_table_file\n";
-#print "blast_dir: $blast_db_dir\n";
+#print "blast_db_dir: $blast_db_dir\n";
 #print "output_dir: $output_dir\n";
 
 
@@ -159,8 +159,8 @@ SKIP: {
     is( -s $blast_output > 0, 1, 'blast file created');
 }
 
-
-# test _parse_blast_file
+#
+## test _parse_blast_file
 my $got; # This is also used in _sequence_printing
 {
     my $expected = {'OTU_7'  => 'Arabidopsis_thaliana_chloroplast_rRNA_AP000423.1',
@@ -277,6 +277,11 @@ my $got; # This is also used in _sequence_printing
     is( -s "$new_output_dir/test_non_contaminants_otu_table.txt" > 0, 1,
        'non_contaminants_otu_table file created');
 }
+
+
+
+### Clean up ###
+system("rm -rf $output_dir");
 
 
 

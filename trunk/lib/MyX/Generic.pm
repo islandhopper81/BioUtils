@@ -1,6 +1,6 @@
 package MyX::Generic;
 
-use version; our $VERSION = qv('1.0.8');
+use version; our $VERSION = qv('1.0.9');
 
 use Exception::Class (
     'MyX::Generic' => {
@@ -115,7 +115,7 @@ different objects
 
 =head1 VERSION
 
-This documentation refers to MyX::Generic version 1.0.8.
+This documentation refers to MyX::Generic version 1.0.9.
 
 =head1 Included Modules
 
@@ -414,7 +414,7 @@ see Exception::Class and Exception::Class::Base.
     Catch Usage: if ( my $e = MyX::Generic::File::BadExtension->caught() )
                     { ... }
     Function: Throw/Catch a MyX::Generic::File::BadExtension
-              exceptions when opperating on files with unrecignized exceptions.
+              exceptions when opperating on files with unrecognized exceptions.
     Fields: file_name => the file with the bad extention
             ext => the extention that is bad
     Inherits: MyX::Generic::File
