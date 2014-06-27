@@ -1,0 +1,49 @@
+Revision history for BioUtils
+
+1.0.9	Mon June 2, 2014
+	- Added Muscle option for building an MSA in ConsensusBuilder
+	- Added an algorithm for building a consensus from non-square alignment
+	  matrix
+	- Added trimming option to FastqFilter prior to filtering algorithm
+	- Small bug fixes
+
+1.0.8	Thurs Jan 16, 2014
+    - Added LSF Parallel options for contaminant removal via blast
+	- Added libraries for Alignment operations including
+		- Needleman-Wunsch
+		- Smith-Waterman
+		- Ojects the hold aligned sequences
+	- Added an entropy calculator based on Shannon entropy
+	- Added trimming methods to Fast*Seq objects
+	- New Consnesus Building methods (untested)
+
+1.0.7	Sat Aug 24, 2013
+    - Added dependancy build to Build.PL
+	- Added Fastq Filter options for c_scores	
+	- Added module for IUPAC to nucleotide conversion
+	- Added c_score attribute to FastqConsensus which grades the similarity
+	  of the sequences used to build the MSA
+
+1.0.6	Mon Jul 29, 2013
+	- Fixed a memory bug in the consensus building algorithm.  Previously,
+	  large numbers of consensus building calls required >20G of memory.
+	  Now comparable samples can be run in < 1G of memory.
+
+1.0.5  	Tues Jul 23, 2013
+	- Added set_header method in FastqSeq.pm
+	- Bug fixes in FastqSeq.t
+
+1.0.4  Fri Jun 14, 2013
+       - Changed fastq filter output file name conventions.  Previously they
+         were named filtered and unfiltered.  They are now HQ (high quality)
+	 and LQ (low quality).
+
+1.0.2  Wed May 29, 2013
+       - Added paired fastq file filtering capabilities
+
+1.0.1  Fri Apr 19, 2013
+       - Changed consensus algorithm such that gaps are not included in consensus
+
+1.0.0  Fri Apr 8, 2013
+       Initial complete release.
+
