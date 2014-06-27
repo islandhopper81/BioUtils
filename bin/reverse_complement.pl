@@ -1,55 +1,135 @@
-BioUtils version 1.0.11
+#! /usr/bin/env perl
 
-A library of perl modules and scripts for doing basic DNA sequence operations.
+# converts all version numbers to a new version number
 
-Includes the following features:
-	- store FASTA/Q sequences (including quality values)
-	- Read/write FASTA/Q files
-	- Perform simple quality control on FASTA/Q sequences
-	- Provide summary info for a set of FASTA/Q sequences
-	- Build a consensus sequence from 2 or more FASTQ sequences
+use strict;
+use warnings;
+
+use Getopt::Long;
+use Pod::Usage;
+use Carp;
+
+# Subroutines #
+sub my_reverse;
+sub my_complement;
+
+# Variables #
+my ($str, $rev_flag, $comp_flag, $help);
+
+my $options_okay = GetOptions (
+    "str:s" => \$str,
+    "rev_flag" => \$rev_flag,
+    "comp_flag" => \$comp_flag,
+    "help" => \$help,                  # flag
+);
+
+# check for input errors
+if ( $help ) { pod2usage(2) }
+if ( ! defined $str ) { pod2usage(2) }
+
+# MAIN
+if ( $rev_flag ) {
+    print my_reverse($str), "\n";
+}
+elsif ( $comp_flag ) {
+    print my_complement($str), "\n";
+}
+else {
+    # both reverse and complement
+    print my_complement(my_reverse($str)), "\n";
+}
 
 
-INSTALLATION
-
-To install this module, run the following commands:
-
-	perl Build.PL
-	./Build installdeps --cpan_client 'cpanm --verbose'
-	./Build test && ./Build install
 
 
-DEPENDENCIES
+########
+# Subs #
+########
+sub my_reverse {
+    my ($str) = @_;
+    my $ans = scalar reverse $str;
+	$ans =~ tr/[]/][/;
+    return $ans;
+}
 
-gnuplot
-clustalw
-BLAST 2.2.25+ (command line version; needed only for QC::ContaminantFilter)
+sub my_complement {
+    my ($str) = @_;
+    
+    $str =~ tr/ACGTacgt/TGCAtgca/;
+    return $str;
+}
 
-Carp
-Chart::Graph::Gnuplot
-Class::Std::Utils
-Config::Std
-Data::Dumper
-Exception::Class
-Exporter
-File::Temp
-File::Basename
+
+
+__END__
+
+# POD
+
+=head1 NAME
+
+reverse_complement.pl - Simple reverse complement for DNA
+
+
+=head1 VERSION
+
+This documentation refers to reverse_complement.pl version 0.0.1
+
+
+=head1 SYNOPSIS
+
+    reverse_complement.pl --str ATGTA
+                      [--rev_flag]
+                      [--comp_flag]
+                      [--help]
+
+    --str  = DNA string to reverse complement
+    --rev_flag   = ONLY reverse the string
+    --comp_flag  = ONLY complement the string
+    --help  = Prints USAGE statement
+
+
+=head1 ARGUMENTS
+    
+=head2 --str
+
+DNA string to reverse complement
+    
+=head2 [--rev_flag]
+
+ONLY reverse the string
+    
+=head2 [--comp_flag]
+
+ONLY complement the string
+
+=head2 [--help]
+    
+An optional parameter to print a usage statement.
+    
+
+=head1 DESCRIPTION
+
+Reverse complements a DNA string
+
+
+=head1 CONFIGURATION AND ENVIRONMENT
+    
+No special configurations or environment variables needed
+    
+    
+=head1 DEPENDANCIES
+
 Getopt::Long
-IPC::Cmd
-List::MoreUtils
 Pod::Usage
-Readonly
-Scalar::Util
-Statistics::Descriptive
-Test::Exception
-Test::More
-Test::Pod
-Test::Pod::Coverage
-Test::Warn
-version
+Carp
 
 
-LICENCE AND COPYRIGHT
+=head1 AUTHOR
+
+Scott Yourstone     scott.yourstone81@gmail.com
+    
+    
+=head1 LICENCE AND COPYRIGHT
 
 Copyright (c) 2013, Scott Yourstone
 All rights reserved.
@@ -79,7 +159,7 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 
 
-DISCLAIMER OF WARRANTY
+=head1 DISCLAIMER OF WARRANTY
 
 BECAUSE THIS SOFTWARE IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY
 FOR THE SOFTWARE, TO THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT WHEN
@@ -101,3 +181,6 @@ RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD PARTIES OR A
 FAILURE OF THE SOFTWARE TO OPERATE WITH ANY OTHER SOFTWARE), EVEN IF
 SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF
 SUCH DAMAGES.
+
+
+=cut

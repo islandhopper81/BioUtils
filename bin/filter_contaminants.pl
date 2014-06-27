@@ -8,7 +8,7 @@
 use strict;
 use warnings;
 
-use BioUtils::QC::ContaminantFilter 1.0.9;
+use BioUtils::QC::ContaminantFilter 1.0.11;
 use Getopt::Long;
 use Config::Std;
 
@@ -168,7 +168,7 @@ from which contaminant OTUs will be seperated from non-contaminant OTUs.
     
 =head1 DEPENDANCIES
 
-    BioUtils::QC::ContaminantFilter 1.0.9
+    BioUtils::QC::ContaminantFilter 1.0.11
     Getopt::Long
     Config::Std
 

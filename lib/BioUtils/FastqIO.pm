@@ -8,10 +8,10 @@ use List::MoreUtils qw(any);
 use Readonly;
 use Carp qw(croak);
 use Scalar::Util qw(openhandle);
-use MyX::Generic 1.0.9;
-use BioUtils::FastqSeq 1.0.9;
+use MyX::Generic 1.0.11;
+use BioUtils::FastqSeq 1.0.11;
 
-use version; our $VERSION = qv('1.0.9');
+use version; our $VERSION = qv('1.0.11');
 
 {
     # Global variables
@@ -172,7 +172,7 @@ BioUtils::FastqIO - An object for parsing FASTQ formated sequence files
 
 =head1 VERSION
 
-This documentation refers to BioUtils::FastqIO version 1.0.9.
+This documentation refers to BioUtils::FastqIO version 1.0.11.
 
 =head1 Included Modules
 
@@ -180,6 +180,7 @@ This documentation refers to BioUtils::FastqIO version 1.0.9.
     List::MoreUtils qw(any)
     Readonly
     Carp qw(croak)
+    Scalar::Util
     MyX::Generic
     BioUtils::FastqSeq
 
