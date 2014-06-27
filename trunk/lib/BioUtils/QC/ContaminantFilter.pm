@@ -6,12 +6,12 @@ use Carp qw(carp croak);
 use Class::Std::Utils;
 use Readonly;
 use List::MoreUtils qw(any);
-use MyX::Generic 1.0.9;
-use BioUtils::FastaSeq 1.0.9;
-use BioUtils::FastaIO 1.0.9;
+use MyX::Generic 1.0.11;
+use BioUtils::FastaSeq 1.0.11;
+use BioUtils::FastaIO 1.0.11;
 use File::Temp qw(tempfile);
 use IPC::Cmd qw(can_run);
-use version; our $VERSION = qv('1.0.9');
+use version; our $VERSION = qv('1.0.11');
 
 {
     Readonly my $NEW_USAGE => q{ new( {params_file => } ) };
@@ -502,10 +502,23 @@ use version; our $VERSION = qv('1.0.9');
     
     sub _otu_table_printing {
         my ($self, $contam_names_href) = @_;
+
+		# NOTE: a format changed occured when we switched from OTUpipe
+		#		to uparse in naming conventions for OTUs in the OTU table.
+		#		When using biom convert the OTU names have no prefix, 
+		#		however when using uc2otutab.py the prefix can be given 
+		#		as an argument in the fasta_number.py script.  Whatever
+		#		this label is set to is consistent between between the 
+		#		rep seqs and otu table.  When using biom convert the labels
+		#		are not consistent between the OTU table and rep seqs file.
+		#		I added a variable (otu_prefix) and some conditions to
+		#		handle these cases.  However, it is best if the names are
+		#		consistent between the otu table and rep seqs file.
         
         my $otu_table_file = $self->get_otu_table();
         my $dir = $self->get_output_dir();
         my $prefix = $self->get_output_prefix();
+		my $otu_prefix = '';  # see note at top of method
         
         # open the input OTU table
         open my $OTU_IN, "<", "$otu_table_file" or
@@ -524,6 +537,12 @@ use version; our $VERSION = qv('1.0.9');
         LINE: foreach my $line ( <$OTU_IN> ) {
             chomp $line;
             my @values = split /\t/, $line;
+			
+			# check if this file was created using biom convert.  See above
+			# note.
+			if ( $line =~ m/Constructed from biom file/i ) {
+				$otu_prefix = "OTU_";
+			}
             
             # print header lines to both OTU tables
             if ( $line =~ m/^#/ ) {
@@ -531,8 +550,9 @@ use version; our $VERSION = qv('1.0.9');
                 print $OTU_NON $line, "\n";
                 next LINE;
             }
-            
-            if ( defined $contam_names_href->{"OTU_" . $values[0]} ) {
+			
+			# print table lines to either contam or non contam file
+            if ( defined $contam_names_href->{$otu_prefix . $values[0]} ) {
                 print $OTU_CON $line, "\n";
             }
             else {
@@ -571,7 +591,7 @@ BioUtils::QC::ContaminantFilter - Identifies and removes sequence contaminants
 
 =head1 VERSION
 
-This document describes BioUtils::QC::ContaminantFilter version 1.0.9
+This document describes BioUtils::QC::ContaminantFilter version 1.0.11
 
 
 =head1 Included Modules
@@ -581,8 +601,8 @@ This document describes BioUtils::QC::ContaminantFilter version 1.0.9
     Readonly
     List::MoreUtils qw(any)
     MyX::Generic
-    BioUtils::FastaSeq 1.0.9
-    BioUtils::FastaIO 1.0.9
+    BioUtils::FastaSeq 1.0.11
+    BioUtils::FastaIO 1.0.11
     File::Temp qw(tempfile)
     IPC::Cmd qw(can_run)
     version

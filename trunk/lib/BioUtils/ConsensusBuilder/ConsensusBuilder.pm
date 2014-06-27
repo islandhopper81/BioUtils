@@ -3,8 +3,8 @@ package BioUtils::ConsensusBuilder::ConsensusBuilder;
 use strict;
 use warnings;
 
-use BioUtils::ConsensusBuilder::FastqColumn 1.0.9;
-use BioUtils::ConsensusBuilder::FastqConsensus 1.0.9;
+use BioUtils::ConsensusBuilder::FastqColumn 1.0.11;
+use BioUtils::ConsensusBuilder::FastqConsensus 1.0.11;
 use BioUtils::Codec::QualityScores qw( int_to_illumina_1_8 illumina_1_8_to_int);
 use BioUtils::Codec::IUPAC qw( nuc_str_to_iupac iupac_to_nuc_str);
 use BioUtils::MyX::ConsensusBuilder;
@@ -12,7 +12,7 @@ use BioUtils::FastaIO;
 use BioUtils::FastqIO;
 use MyX::Generic;
 use Carp qw(carp croak);
-use version; our $VERSION = qv('1.0.9');
+use version; our $VERSION = qv('1.0.11');
 use Exporter qw( import );
 our @EXPORT_OK = qw(build_consensus build_con_from_file build_from_clustalw_file buildFromSimpleAlign);
 
@@ -536,7 +536,7 @@ from a multiple sequence alignment (MSA)
 
 =head1 VERSION
 
-This documentation refers to ConsensusBuilder version 1.0.9.
+This documentation refers to ConsensusBuilder version 1.0.11.
 
 =head1 Included Modules
 

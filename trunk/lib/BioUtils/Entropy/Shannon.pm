@@ -6,7 +6,7 @@ use Carp;
 use Readonly;
 use Class::Std::Utils;
 use List::MoreUtils qw(any);
-use version; our $VERSION = qv('1.0.9');
+use version; our $VERSION = qv('1.0.11');
 
 # Other recommended modules (uncomment to use):
 # use MyX::Generic;
@@ -164,7 +164,7 @@ Entropy::Shannon - Computes the Shannon Entropy for a sequence or set of seqs
 
 =head1 VERSION
 
-This document describes Entropy::Shannon version 1.0.9
+This document describes Entropy::Shannon version 1.0.11
 
 
 =head1 SYNOPSIS
@@ -195,7 +195,7 @@ This document describes Entropy::Shannon version 1.0.9
 	Readonly
 	Class::Std::Utils
 	List::MoreUtils qw(any)
-	version our $VERSION = qv('1.0.9')
+	version our $VERSION = qv('1.0.11')
 	BioUtils::FastaIO
 	BioUtils::FastqIO
 

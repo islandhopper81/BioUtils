@@ -8,10 +8,10 @@ use List::MoreUtils qw(any);
 use Readonly;
 use Carp qw(croak);
 use Scalar::Util qw(openhandle);
-use MyX::Generic 1.0.9;
-use BioUtils::FastaSeq 1.0.9;
+use MyX::Generic 1.0.11;
+use BioUtils::FastaSeq 1.0.11;
 
-use version; our $VERSION = qv('1.0.9');
+use version; our $VERSION = qv('1.0.11');
 
 
 {
@@ -178,7 +178,7 @@ BioUtils::FastaSeq objects
 
 =head1 VERSION
 
-This document describes BioUtils::FastaIO version 1.0.9
+This document describes BioUtils::FastaIO version 1.0.11
 
 
 =head1 SYNOPSIS
@@ -251,6 +251,7 @@ BioUtils::FastaIO requires no configuration files or environment variables.
 	List::MoreUtils qw(any)
 	Readonly
 	Carp qw(croak)
+	Scalar::Util
 	MyX::Generic
 	BioUtils::FastaSeq
 

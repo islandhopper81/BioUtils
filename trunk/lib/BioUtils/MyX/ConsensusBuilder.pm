@@ -1,14 +1,23 @@
-package BioUtils::MyX::Fastq;
+package BioUtils::MyX::ConsensusBuilder;
 
 
 use Exception::Class (
-    'BioUtils::MyX::Fastq' => {
+    'BioUtils::MyX::ConsensusBuilder' => {
     },
     
-    'BioUtils::MyX::Fastq::BadHeaderFormat' => {
-        isa => 'BioUtils::MyX::Fastq',
-        fields => [ 'header' ],
+    'BioUtils::MyX::ConsensusBuilder::SeqsNotSqr' => {
+        isa => 'BioUtils::MyX::ConsensusBuilder',
+        fields => [ 'alignment_len', 'seq_len' ],
     },
+    
+    'BioUtils::MyX::ConsensusBuilder::QualsNotSqr' => {
+        isa => 'BioUtils::MyX::ConsensusBuilder',
+        fields => [ 'alignment_len', 'quals_len'],
+    },
+    
+    'BioUtils::MyX::ConsensusBuilder::NoSeqs' => {
+        isa => 'BioUtils::MyX::ConsensusBuilder',
+    }
     
 );
 
@@ -21,12 +30,12 @@ __END__
 #######
 =head1 NAME
 
-BioUtils::MyX::Fastq - A hierarchy of exceptions that can be used when working
-with fastq sequences and corresponding objects.
+BioUtils::MyX::ConsensusBuilder - A hierarchy of exceptions that can be used
+when working with ConsensusBuilder objects.
 
 =head1 VERSION
 
-This documentation refers to BioUtils::MyX::Fastq version 1.0.11.
+This documentation refers to BioUtils::MyX::ConsensusBuilder version 1.0.11.
 
 =head1 Included Modules
 
@@ -39,16 +48,16 @@ This documentation refers to BioUtils::MyX::Fastq version 1.0.11.
 =head1 SYNOPSIS
 
     # Throw a Fastq exception
-    use BioUtils::MyX::Fastq 1.0.11;
+    use BioUtils::MyX::ConsensusBuilder 1.0.11;
     if ( ... ) {   # Some code looking for an error
-        BioUtils::MyX::Fastq->throw(
-            error => 'A fastq exception'
+        BioUtils::MyX::ConsensusBuilder->throw(
+            error => 'A ConsesusBuilder exception'
         );
     }
     
     # In caller catch the Generic exception
     eval { ... };
-    if ( my $e = BioUtils::MyX::Fastq->caught() ) {
+    if ( my $e = BioUtils::MyX::ConsensusBuilder->caught() ) {
         # Do something to handle the exception like print an error message
         print $e->error(), " via package ", $e->package(), " at ", $e->file,
             " line ", $e->line();
@@ -57,8 +66,8 @@ This documentation refers to BioUtils::MyX::Fastq version 1.0.11.
 
 =head1 DESCRIPTION
 
-BioUtils::MyX::Fastq holds a hierarchy of exception classes that are associated
-with fastq sequences and their corresponding classes.  
+BioUtils::MyX::ConsensusBuilder holds a hierarchy of exception classes that are
+associated with ConsensusBuilder objects.  
 
 For more information what can be done when throwing and catching an exception
 see Exception::Class and Exception::Class::Base.
@@ -67,42 +76,79 @@ see Exception::Class and Exception::Class::Base.
 
 =over
 
-    BioUtils::MyX::Fastq
-    BioUtils::MyX::Fastq::BadHeaderFormat
+    BioUtils::MyX::ConsensusBuilder
+    BioUtils::MyX::ConsensusBuilder::SeqsNotSqr
+    BioUtils::MyX::ConsensusBuilder::QualsNotSqr
+    BioUtils::MyX::ConsensusBuilder::NoSeqs
     
     
 =back
 
 =head1 CLASSES DESCRIPTION
 
-=head2 BioUtils::MyX::Fastq
+=head2 BioUtils::MyX::ConsensusBuilder
     
-    Title: BioUtils::MyX::Fastq
-    Throw Usage: BioUtils::MyX::Fastq->throw(
-                    error => 'Any fastq error message'
+    Title: BioUtils::MyX::ConsensusBuilder
+    Throw Usage: BioUtils::MyX::ConsensusBuilder->throw(
+                    error => 'Any ConsensusBuilder error message'
                 );
-    Catch Usage: if ( my $e = BioUtils::MyX::Fastq->caught() ) { ... }
-    Function: Throw/Catch a BioUtils::MyX::Fastq exception
+    Catch Usage: if ( my $e = BioUtils::MyX::ConsensusBuilder->caught() ) { ... }
+    Function: Throw/Catch a BioUtils::MyX::ConsensusBuilder exception
     Fields: error => an error message
     Inherits: NA
     Comments: NA
     See Also: NA
 
-=head2 BioUtils::MyX::Fastq::BadHeaderFormat
+=head2 BioUtils::MyX::ConsensusBuilder::SeqsNotSqr
 
-    Title: BioUtils::MyX::Fastq::BadHeaderFormat
-    Throw Usage: BioUtils::MyX::Fastq::BadHeaderFormat->throw(
-                    header => $header
+    Title: BioUtils::MyX::ConsensusBuilder::SeqsNotSqr
+    Throw Usage: BioUtils::MyX::ConsensusBuilder::SeqsNotSqr->throw(
+                    alignment_len => $alignment_len,
+                    seq_len => $seq_len,
                  );
-    Catch Usage: if ( my $e = BioUtils::MyX::Fastq::BadHeaderFormat->caught() )
+    Catch Usage: if ( my $e = BioUtils::MyX::ConsensusBuilder::SeqsNotSqr->caught() )
                     { ... }
-    Function: Throw/Catch a BioUtils::MyX::Fastq::BadHeaderFormat exception when
-              a header with an incorrect format is encounted.
-    Fields: header => The header with incorrect format
-    Inherits: BioUtils::MyX::Fastq
+    Function: Throw/Catch a BioUtils::MyX::ConsensusBuilder::SeqsNotSqr exception
+              when the sequences in an alignment are not square
+    Fields: alignment_len => The alignment length set by the length of the first
+                             sequence.
+            seq_len => The length of the sequence that doesn't match
+    Inherits: BioUtils::MyX::ConsensusBuilder
     Comments: NA
     See Also: NA
-        
+    
+=head2 BioUtils::MyX::ConsensusBuilder::QualsNotSqr
+
+    Title: BioUtils::MyX::ConsensusBuilder::QualsNotSqr
+    Throw Usage: BioUtils::MyX::ConsensusBuilder::QualsNotSqr->throw(
+                    alignment_len => $alignment_len,
+                    quals_len = $quals_len,
+                 );
+    Catch Usage: if ( my $e = BioUtils::MyX::ConsensusBuilder::QualsNotSqr->caught() )
+                    { ... }
+    Function: Throw/Catch a BioUtils::MyX::ConsensusBuilder::QualsNotSqr exception
+              when the quality scores in an alignment are not square
+    Fields: alignment_len => The alignment length set by the length of the first
+                             sequence.
+            quals_len => The length of the quality score string that doesn't match
+    Inherits: BioUtils::MyX::ConsensusBuilder
+    Comments: NA
+    See Also: NA
+    
+=head2 BioUtils::MyX::ConsensusBuilder::NoSeqs
+
+    Title: BioUtils::MyX::ConsensusBuilder::NoSeqs
+    Throw Usage: BioUtils::MyX::ConsensusBuilder::NoSeqs->throw();
+    Catch Usage: if ( my $e = BioUtils::MyX::ConsensusBuilder::NoSeqs->caught() )
+                    { ... }
+    Function: Throw/Catch a BioUtils::MyX::ConsensusBuilder::NoSeqs exception
+              when there are no sequence object to use in building a consensus
+    Fields: NA -- Only generic error fields defined by Exception::Class
+    Inherits: BioUtils::MyX::ConsensusBuilder
+    Comments: NA
+    See Also: NA
+
+
 =head1 AUTHOR
 
 Scott Yourstone  C<< <scott.yourstone81@gmail.com> >>

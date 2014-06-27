@@ -1,5 +1,8 @@
 Revision history for BioUtils
 
+1.0.11	Under development
+	- Fixed naming convention bug in QC::ContaminantFilter.pm
+
 1.0.9	Mon June 2, 2014
 	- Added Muscle option for building an MSA in ConsensusBuilder
 	- Added an algorithm for building a consensus from non-square alignment
