@@ -27,6 +27,7 @@ use version; our $VERSION = qv('1.0.11');
     my %output_fmt_of;
     my %max_targets_of;
     my %otu_table_of;
+    my %keep_tmp_of;
     
     # Setters #
     sub set_blast_db;
@@ -38,6 +39,7 @@ use version; our $VERSION = qv('1.0.11');
     sub set_output_fmt;
     sub set_max_targets;
     sub set_otu_table;
+    sub set_keep_tmp;
     
     # Getters #
     sub get_blast_db;
@@ -49,6 +51,7 @@ use version; our $VERSION = qv('1.0.11');
     sub get_output_fmt;
     sub get_max_targets;
     sub get_otu_table;
+    sub get_keep_tmp;
     
     # Others #
     sub run_filter;
@@ -62,6 +65,7 @@ use version; our $VERSION = qv('1.0.11');
     sub _otu_table_printing;
     sub _check_blastn_exe;
     sub _check_bsub_exe;
+    sub _to_bool;
     
     
     ###############
@@ -154,6 +158,13 @@ use version; our $VERSION = qv('1.0.11');
         return 1;
     }
     
+    sub set_keep_tmp {
+        my ($self, $k) = @_;
+        
+        $keep_tmp_of{ident $self} = $k;
+        return 1;
+    }
+    
 
     ###########
     # Getters #
@@ -201,6 +212,11 @@ use version; our $VERSION = qv('1.0.11');
     sub get_otu_table {
         my ($self) = @_;
         return $otu_table_of{ident $self};
+    }
+    
+    sub get_keep_tmp {
+        my ($self) = @_;
+        return $keep_tmp_of{ident $self};
     }
     
     
@@ -262,6 +278,12 @@ use version; our $VERSION = qv('1.0.11');
         }
         if ( defined $arg_href->{otu_table} ) {
             $self->set_otu_table($arg_href->{otu_table});
+        }
+        if ( defined $arg_href->{keep_tmp} ) {
+            $self->set_keep_tmp($arg_href->{keep_tmp});
+        }
+        else {
+            $self->set_keep_tmp(0); # FALSE
         }
         
         return 1;
@@ -345,10 +367,10 @@ use version; our $VERSION = qv('1.0.11');
         close(BLAST_DIR);
     
         foreach my $blast_file (@blast_files) {
-            my $command = "bsub -q week " .
+            my $command = "bsub -q bigmem " .
                             "-o $log_dir/$blast_file.lsfout " .
                             "-e $log_dir/$blast_file.err " .
-                            "-n 1 -J parallelBLAST ";
+                            "-n 1 -J parallelBLAST -M 100 ";
             
             $command .= "blastn " .
                       "-db $database " . 
@@ -386,8 +408,11 @@ use version; our $VERSION = qv('1.0.11');
         # Merge all the split blast output files into one
         system ("cat $blast_dir/*.bls > $output_file");
         
-        # clean up the tmp directories.  Comment this line for debugging
-        system("rm -rf $fasta_dir $blast_dir $log_dir");
+        # clean up the tmp directories unless keep_tmp is true
+        print "keep_tmp: " . $self->get_keep_tmp() . "\n";
+        if ( ! _to_bool($self->get_keep_tmp()) ) {
+            system("rm -rf $fasta_dir $blast_dir $log_dir");
+        }
         
         return $output_file;
     }
@@ -578,6 +603,22 @@ use version; our $VERSION = qv('1.0.11');
         
         return 1;
     }
+    
+    sub _to_bool {
+		my ($val) = @_;
+		
+		if ( $val eq 1 or $val eq 0 ) {
+			return $val;
+		}
+		
+		my %good_yes_values = map { $_ => 1 } qw(Y YES Yes y yes t true True TRUE);
+		if ( defined $good_yes_values{$val} ) {
+			return 1;
+		}
+		
+		# else -- meaning no parallel
+		return 0;
+	}
 }
 
 
@@ -623,6 +664,7 @@ This document describes BioUtils::QC::ContaminantFilter version 1.0.11
                             output_fmt => $output_fmt,
                             max_targets => $max_targets,
                             otu_table => $otu_table_file,
+                            keep_tmp => $keep_tmp,
                         });
     
     # run the filtering process
@@ -662,6 +704,7 @@ This document describes BioUtils::QC::ContaminantFilter version 1.0.11
     set_output_fmt
     set_max_targets
     set_otu_table
+    set_keep_tmp
     
     # Getters #
     get_params_file
@@ -674,6 +717,7 @@ This document describes BioUtils::QC::ContaminantFilter version 1.0.11
     get_output_fmt
     get_max_targets
     get_otu_table
+    get_keep_tmp
     
     # Others #
     run_filter
@@ -687,6 +731,7 @@ This document describes BioUtils::QC::ContaminantFilter version 1.0.11
     _otu_table_printing
     _check_blastn_exe
     _check_bsub_exe
+    _to_bool
 
 =head1 DIAGNOSTICS
 
@@ -745,12 +790,13 @@ None reported.
                         output_fmt => $output_fmt,
                         max_targets => $max_targets,
                         otu_table => $otu_table_file,
+                        keep_tmp => $keep_tmp,
                         });
     Function: Creates a new BioUtils::QC::ContaminantFilter object
     Returns: BioUtils::QC::ContaminantFilter
-    Args: -blast_db => full path and name of the blast database
+    Args: -arg_href => hash ref with arguments
 	Throws: MyX::Generic::Undef::Param
-	Comments: e.g. /Home/Me/db/my_blast_db
+	Comments: Path to database e.g. /Home/Me/db/my_blast_db
 	See Also: NA
 
 =head2 run_filter
@@ -877,6 +923,17 @@ None reported.
 	Comments: The OTU table is an optional input
 	See Also: NA
     
+=head2 set_keep_tmp
+
+    Title: set_keep_tmp
+    Usage: $contam_filter->set_keep_tmp($keep_tmp);
+    Function: Sets the keep_tmp flag
+    Returns: 1 on successful completion
+    Args: keep_tmp => a boolean value (e.g. y, n)
+	Throws: NA
+	Comments: NA
+	See Also: NA
+    
 =head2 get_blast_db
 
     Title: get_blast_db
@@ -975,6 +1032,18 @@ None reported.
 	Throws: NA
 	Comments: May return undef if this parameter is not specified.  It is an
               optional parameter.
+	See Also: NA
+    
+=head2 get_keep_tmp
+
+    Title: get_keep_tmp
+    Usage: my $keep_tmp = $contam_filter->get_keep_tmp();
+    Function: Gets the keep tmp value
+    Returns: Str
+    Args: NA
+	Throws: NA
+	Comments: The return value is a string because it can be set to y, n, yes,
+              no, etc.
 	See Also: NA
     
 =head2 _init
@@ -1109,6 +1178,19 @@ None reported.
     Args: NA
 	Throws: NA
 	Comments: This applies only to LSF cluster systems
+	See Also: NA
+    
+=head2 _to_bool
+
+    Title: _to_bool
+    Usage: _to_bool($val);
+    Function: converts val to a Perl boolean
+    Returns: boolean
+    Args: str
+	Throws: NA
+	Comments: Valid true values include: Y YES Yes y yes t true True TRUE.
+              Everything else is interpreted as false.  The return values for
+              a boolean in perl are 1 (true) and 0 (false).
 	See Also: NA
     
 

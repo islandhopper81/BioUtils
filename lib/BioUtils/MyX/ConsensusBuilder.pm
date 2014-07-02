@@ -17,7 +17,11 @@ use Exception::Class (
     
     'BioUtils::MyX::ConsensusBuilder::NoSeqs' => {
         isa => 'BioUtils::MyX::ConsensusBuilder',
-    }
+    },
+    
+    'BioUtils::MyX::ConsensusBuilder::TooFewSeqs' => {
+        isa => 'BioUtils::MyX::ConsensusBuilder',
+    },
     
 );
 
@@ -80,6 +84,7 @@ see Exception::Class and Exception::Class::Base.
     BioUtils::MyX::ConsensusBuilder::SeqsNotSqr
     BioUtils::MyX::ConsensusBuilder::QualsNotSqr
     BioUtils::MyX::ConsensusBuilder::NoSeqs
+    BioUtils::MyX::ConsensusBuilder::TooFewSeqs
     
     
 =back
@@ -143,6 +148,21 @@ see Exception::Class and Exception::Class::Base.
                     { ... }
     Function: Throw/Catch a BioUtils::MyX::ConsensusBuilder::NoSeqs exception
               when there are no sequence object to use in building a consensus
+    Fields: NA -- Only generic error fields defined by Exception::Class
+    Inherits: BioUtils::MyX::ConsensusBuilder
+    Comments: NA
+    See Also: NA
+    
+=head2 BioUtils::MyX::ConsensusBuilder::TooFewSeqs
+
+    Title: BioUtils::MyX::ConsensusBuilder::TooFewSeqs
+    Throw Usage: BioUtils::MyX::ConsensusBuilder::TooFewSeqs->throw();
+    Catch Usage: if ( my $e = BioUtils::MyX::ConsensusBuilder::TooFewSeqs->caught() )
+                    { ... }
+    Function: Throw/Catch a BioUtils::MyX::ConsensusBuilder::TooFewSeqs exception
+              when all the sequences are different lengths.  This means that a
+              consensus cannot be built without first building a MSA, which
+              effectively makes all the seqs the same length.
     Fields: NA -- Only generic error fields defined by Exception::Class
     Inherits: BioUtils::MyX::ConsensusBuilder
     Comments: NA

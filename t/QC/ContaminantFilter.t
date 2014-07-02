@@ -1,6 +1,6 @@
 
 use BioUtils::QC::ContaminantFilter 1.0.11;
-use Test::More tests => 51;
+use Test::More tests => 53;
 use Test::Exception;
 use File::Temp qw(tempfile tempdir);
 use IPC::Cmd qw(can_run);
@@ -53,6 +53,7 @@ my $filter;
                                     output_fmt => 6,
                                     max_targets => 1,
                                     otu_table => $otu_table_file,
+                                    keep_tmp => 'N',
                                 })},
             "new(arg_href) - lives");
 }
@@ -114,6 +115,12 @@ my $filter;
     is( $filter->get_otu_table(), "my_table", "get_otu_table()" );
 }
 
+# test get/set_keep_tmp
+{
+    is( $filter->set_keep_tmp("Y"), 1, "set_keep_tmp(Y)" );
+    is( $filter->get_keep_tmp(), "Y", "get_keep_tmp() - Y" );
+}
+
 # reload the correct filter parameters
 $filter = BioUtils::QC::ContaminantFilter->new({  blast_db => $blast_db_name,
                                     query_file => $seq_file,
@@ -124,6 +131,7 @@ $filter = BioUtils::QC::ContaminantFilter->new({  blast_db => $blast_db_name,
                                     output_fmt => 6,
                                     max_targets => 1,
                                     otu_table => $otu_table_file,
+                                    keep_tmp => "Y",
                                  });
 
 # test _run_blast -- these test are not comprehensive
@@ -230,6 +238,7 @@ my $got; # This is also used in _sequence_printing
                                         perc_iden => 80,
                                         output_fmt => 6,
                                         max_targets => 1,
+                                        keep_tmp => "Y",
                                      });
     
     lives_ok( sub{ $filter->run_filter() },
@@ -262,6 +271,7 @@ my $got; # This is also used in _sequence_printing
                                         output_fmt => 6,
                                         max_targets => 1,
                                         otu_table => $otu_table_file,
+                                        keep_tmp => "Y",
                                      });
     
     lives_ok( sub{ $filter->run_filter() },

@@ -50,6 +50,7 @@ my $filter = BioUtils::QC::ContaminantFilter->new({
                 query_file => $hash{'BLAST Parameters'}{'query'},
                 output_dir => $hash{'Output'}{'dir'},
                 output_prefix => $hash{'Output'}{'prefix'},
+                keep_tmp => $hash{'Output'}{'keep_tmp'},
                 eval => $hash{'BLAST Parameters'}{'evalue'},
                 perc_iden => $hash{'BLAST Parameters'}{'perc_identity'},
                 output_fmt => $hash{'BLAST Parameters'}{'output_fmt'},
