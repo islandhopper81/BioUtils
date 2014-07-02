@@ -9,7 +9,7 @@ use BioUtils::Codec::QualityScores qw( int_to_illumina_1_8 illumina_1_8_to_int )
 use Data::Dumper qw( Dumper );
 use File::Temp qw{tempfile};
 
-use Test::More tests => 47;
+use Test::More tests => 49;
 use Test::Exception;
 use Test::Warn;
 
@@ -237,8 +237,8 @@ my @seqs_arr = ($s1_obj, $s2_obj);
     $seq_count++;
     $dist_hr = BioUtils::ConsensusBuilder::ConsensusBuilder::_build_len_dist( \@seqs_arr, $seq_count );
     warnings_are  {$aln_len = BioUtils::ConsensusBuilder::ConsensusBuilder::_check_aln_len( $dist_hr ) } [
-                            "WARNING ($0): Alignment not square.  Ignoring seqs:",
-                            "\tseq3"],
+                            "WARNING ($0): Alignment not square.  Ignoring seqs: " .
+                            "seq3, "],
                     "warnings thrown";
     
 }
@@ -255,8 +255,8 @@ my @seqs_arr = ($s1_obj, $s2_obj);
     # add a seq that makes the alignment not square
     push @seqs_arr, $s3_obj;
     warnings_are  {$con = build_consensus( \@seqs_arr ) } [
-                            "WARNING ($0): Alignment not square.  Ignoring seqs:",
-                            "\tseq3"],
+                            "WARNING ($0): Alignment not square.  Ignoring seqs: " .
+                            "seq3, "],
                     "warnings thrown";
     is( $con->get_seq(), "ATCG", "removes seq3 correctly -- seq" );
     is( $con->get_quals_str(), "DDDD", "removes seq3 correctly -- quals" );
@@ -269,6 +269,35 @@ my @seqs_arr = ($s1_obj, $s2_obj);
                     "warnings thrown";
     is( $con->get_seq(), "ATCG", "removes seq3 correctly -- seq" );
     is( $con->get_quals_str(), "DDDD", "removes seq3 correctly -- quals" );
+}
+
+# test build_consensus_from_aref with only two of different lengths
+# meaning I can't generate a consensus sequence
+{
+    # build a bunch of FastqSeq objects
+    my $s1_obj = BioUtils::FastqSeq->new({
+        header => "seq1",
+        seq => "ATCG",
+        quals_str => "DDDD",
+    });
+    my $s2_obj = BioUtils::FastqSeq->new({
+        header => "seq2",
+        seq => "ATC",
+        quals_str => "DDD",
+    });
+    
+    my @seqs_arr = ($s1_obj, $s2_obj);
+    my $con;
+    warnings_are { eval{$con = build_consensus(\@seqs_arr)}; } [
+        "WARNING ($0): Alignment not square.  Ignoring seqs: " .
+        "seq2, seq1, " ],
+        "warnings thrown";
+    
+    # I have to do an unconventional catch here to see if an error was thrown
+    # in the above warning test
+    is( ref(BioUtils::MyX::ConsensusBuilder::TooFewSeqs->caught()),
+       'BioUtils::MyX::ConsensusBuilder::TooFewSeqs',
+       "caught - TooFewSeqs");
 }
 
 # test when a hash ref is used

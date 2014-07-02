@@ -196,6 +196,7 @@ sub _build_len_dist {
 		$l = length($seqs_aref->[$i]->get_seq());
 		
 		# I added an eval here because the id is not required
+		# if the header is not present it temporarily becomes $i
 		eval { $n = $seqs_aref->[$i]->get_id() };
 		if ( my $e = MyX::Generic::Undef::Attribute->caught() ) {
 			if ( $e->error() =~ m/Undefined header/ ) { $n = $i; }
@@ -217,6 +218,9 @@ sub _build_len_dist {
 sub _check_aln_len {
 	my ($aln_len_href) = @_;
 	
+	# the aln_len_href has KEY: length int VALUE: array of names with that len
+	# i.e. 100 => (seq1, seq2)
+	
 	my $aln_len;  # return value
 	
 	if ( keys %$aln_len_href == 1 ) {
@@ -224,29 +228,47 @@ sub _check_aln_len {
 	}
 	else {  # the alignment is not square
 		# get the most represented alignment length
-		my $top_len = 0;
-		my $top_key = "";
+		my $top_len = "";
+		my $top_count = 0;
 		
 		foreach my $key ( keys %$aln_len_href ) {
 			my $aref = $aln_len_href->{$key};
 			my $l = scalar @{$aref};
-			if ( $l > $top_len ) {
-				$top_len = $l;
-				$top_key = $key;
+			if ( $l > $top_count ) {
+				$top_count = $l;
+				$top_len = $key;
 			}
 		}
-		$aln_len = $top_key;
+		$aln_len = $top_len;
 		
 		# print warnings
-		warn "WARNING ($0): Alignment not square.  Ignoring seqs:";
+		my $warn_str = "WARNING ($0): Alignment not square.  Ignoring seqs: ";
 		foreach my $key ( keys %$aln_len_href ) {
-			if ( $key != $top_key ) {
+			if ( $key != $top_len ) {
 				foreach my $seq_id ( @{$aln_len_href->{$key}} ) {
-					# remember this is a has with an array of seq ids
-					warn "\t" . $seq_id;
+					# remember this is a hash with an array of seq ids
+					$warn_str .= "$seq_id, ";
 				}
 			}
 		}
+		
+		# It is possible at this point to have only one sequence.  Of course
+		# a consensus cannot be made from one sequence.  Throw an error here
+		# if that happens
+		if ( $top_count < 2 ) {
+			foreach my $seq_id ( @{$aln_len_href->{$top_len}} ) {
+				$warn_str .= "$seq_id, ";
+			}
+			warn $warn_str;
+			
+			# throw the error.
+			BioUtils::MyX::ConsensusBuilder::TooFewSeqs->throw(
+				error => "Seqs with different lengths and represened only once"
+			);
+		}
+		
+		# print the warning
+		warn $warn_str;
 	}
 	
 	return $aln_len;
