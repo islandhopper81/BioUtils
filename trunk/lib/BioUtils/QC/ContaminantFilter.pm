@@ -16,6 +16,8 @@ use version; our $VERSION = qv('1.0.11');
 {
     Readonly my $NEW_USAGE => q{ new( {params_file => } ) };
     Readonly my $SEQS_PER_FILE => 10000;
+    Readonly my $MEM => 100;
+    Readonly my $QUEUE => "bigmem";
     
     # Attributes #
     my %blast_db_of;
@@ -224,12 +226,12 @@ use version; our $VERSION = qv('1.0.11');
     # Others #
     ##########
     sub run_filter {
-        my ($self, $parallel_flag, $seq_per_file) = @_;
+        my ($self, $parallel_flag, $seq_per_file, $queue, $mem) = @_;
         
         my $blast_output_file;
         if ( $parallel_flag ) {
             print "Run Parllel Blast\n";
-            $blast_output_file = $self->_run_parallel_blast($seq_per_file);
+            $blast_output_file = $self->_run_parallel_blast($seq_per_file, $queue, $mem);
         }
         else {
             $blast_output_file = $self->_run_blast();
@@ -331,7 +333,10 @@ use version; our $VERSION = qv('1.0.11');
     }
     
     sub _run_parallel_blast {
-        my ($self, $seqs_per_file) = @_;
+        my ($self, $seqs_per_file, $queue, $mem,) = @_;
+        
+        if ( !defined $queue ) { $queue = $QUEUE; }
+        if ( !defined $mem ) { $mem = $MEM; }
         
         _check_blastn_exe();
         _check_bsub_exe();
@@ -367,10 +372,10 @@ use version; our $VERSION = qv('1.0.11');
         close(BLAST_DIR);
     
         foreach my $blast_file (@blast_files) {
-            my $command = "bsub -q bigmem " .
+            my $command = "bsub -q $queue " .
                             "-o $log_dir/$blast_file.lsfout " .
                             "-e $log_dir/$blast_file.err " .
-                            "-n 1 -J parallelBLAST -M 100 ";
+                            "-n 1 -J parallelBLAST -M $mem ";
             
             $command .= "blastn " .
                       "-db $database " . 
@@ -673,7 +678,9 @@ This document describes BioUtils::QC::ContaminantFilter version 1.0.11
     # or to run using the LSF parallelization
     my $parallel_flag = 1; # TRUE
     my $seqs_per_file = 10000;
-    $contam_filter->filter($parallel_flag, $seqs_per_file);
+    my $queue = "bigmem";
+    my $mem = 100;  # the bsub -M argument
+    $contam_filter->run_filter($parallel_flag, $seqs_per_file, $queue, $mem);
   
   
 =head1 DESCRIPTION
@@ -802,13 +809,15 @@ None reported.
 =head2 run_filter
 
     Title: run_filter
-    Usage: $contam_filter->run_filter($parallel_flage, $seqs_per_file);
+    Usage: $contam_filter->run_filter($parallel_flage, $seqs_per_file, $queue, $mem);
     Function: Filters out OTUs from the fasta and OTU table that are contaminants
     Returns: 1 on successful completion
     Args: parallel_flag => optional flag to run the parallelized LSF version of
                            blast
           seqs_per_file => if running in parallel the number of seqs for each
                            split fasta file
+          queue => bsub queue to submit the parallel jobs to [DEFAULT: bigmem]
+          mem => the bsub -M argument [DEFAULT: 100]
 	Throws: NA
 	Comments: There are four output files: 2 fasta files and 2 otu table files.
               Each pair of output files consists of both a contaminant file and 
@@ -1083,12 +1092,14 @@ None reported.
 =head2 _run_parallel_blast
 
     Title: _run_parallel_blast
-    Usage: $contam_filter->_run_parallel_blast($seqs_per_file);
+    Usage: $contam_filter->_run_parallel_blast($seqs_per_file, $queue, $mem);
     Function: Runs command line blast program by spliting the input fasta into
               (# of seqs / seqs per file) files and submits each file as a
               seperate blast job to the LSF cluster.  
     Returns: Blast output file
     Args: seqs_per_file => the number of seqs in each jobs fasta file
+          queue => the bsub queue to submit the parallel jobs to [DEFAULT: bigmem]
+          mem => the bsub -M argument [DEFAULT: 100]
 	Throws: NA
 	Comments: The blast output file is a tempfile.  It is returned so it can be
               parsed by _parse_blast_file.

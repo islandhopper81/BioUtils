@@ -27,6 +27,7 @@ lib/MyX/Generic.pm
 bin/fastq_filter.pl
 bin/filter_contaminants.pl
 bin/reverse_complement.pl
+bin/quals_to_ints.pl
 t/00.load.t
 t/pod-coverage.t
 t/pod.t
