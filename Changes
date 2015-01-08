@@ -1,7 +1,10 @@
 Revision history for BioUtils
 
 1.0.11	Under development
+	- Added some bsub parameter options to filter_contaminants
+	- Added command line options to filter_contaminants
 	- Fixed naming convention bug in QC::ContaminantFilter.pm
+	- Added script for easy quality to int investigation (quals_to_ints.pl)
 
 1.0.9	Mon June 2, 2014
 	- Added Muscle option for building an MSA in ConsensusBuilder

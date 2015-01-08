@@ -161,7 +161,7 @@ my $blast_output;
 SKIP: {
     skip "Not on LSF cluster", 2 if (! can_run("bsub"));
     
-    lives_ok( sub{ $blast_output = $filter->_run_parallel_blast(2) },
+    lives_ok( sub{ $blast_output = $filter->_run_parallel_blast(2, "week", 2) },
              '_run_parallel_blast() - lives' );
     
     is( -s $blast_output > 0, 1, 'blast file created');

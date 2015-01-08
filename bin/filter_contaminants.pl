@@ -8,59 +8,134 @@
 use strict;
 use warnings;
 
+use version; our $VERSION = qv('1.0.11');
+
 use BioUtils::QC::ContaminantFilter 1.0.11;
 use Getopt::Long;
 use Config::Std;
+use Pod::Usage;
+use Readonly;
+use Cwd;
+
+# Global Variables
+Readonly::Scalar my $OUTPUT_DIR => getcwd;
+Readonly::Scalar my $OUTPUT_PREFIX => "out";
+Readonly::Scalar my $KEEP_TMP => "no";
+Readonly::Scalar my $EVAL => 0.00001;
+Readonly::Scalar my $PERC_IDEN => 94;
+Readonly::Scalar my $OUTPUT_FMT => 6;
+Readonly::Scalar my $MAX_TARGETS => 1;
+Readonly::Scalar my $PARALLEL => "OFF";
+Readonly::Scalar my $SEQS_PER_FILE => 10000;
+Readonly::Scalar my $QUEUE => "bigmem";
+Readonly::Scalar my $MEM => 100;
 
 print "Start\n\n";
 
-# USAGE
-my $usage = "$0 --params_file file [--help]\n";
-
 # Variables to be set by GetOpts and their defaults
 my $params_file = undef;
-my $help = 0;
+my ($blast_db, $query_file, $output_dir, $output_prefix, $keep_tmp, $eval,
+    $perc_iden, $output_fmt, $max_targets, $otu_table, $parallel, $seqs_per_file,
+    $queue, $mem, $help, $man);
 
 my $options_okay = GetOptions (
     "params_file:s" => \$params_file,  # string
+    "blast_db:s" => \$blast_db,
+    "query_file:s" => \$query_file,
+    "output_dir:s" => \$output_dir,
+    "output_prefix:s" => \$output_prefix,
+    "keep_tmp:s" => \$keep_tmp,
+    "eval:s" => \$eval,
+    "perc_iden:s" => \$perc_iden,
+    "output_fmt:s" => \$output_fmt,
+    "max_targets:s" => \$max_targets,
+    "otu_table:s" => \$otu_table,
+    "parallel:s" => \$parallel,
+    "seqs_per_file:s" => \$seqs_per_file,
+    "queue:s" => \$queue,
+    "mem:s" => \$mem,
     "help" => \$help,                  # flag
+    "man" => \$man,  #flag
 );
 
 # Fail if unknown options are encountered
 if ( ! $options_okay ) {
-    die $usage;
+    pod2usage(2);
 }
 
-# Print a help message
 if ( $help ) {
-    die $usage;
+    pod2usage(2);
 }
 
-# Fail if no params file is given
-if ( ! defined $params_file ) {
-    die $usage;
+if ( $man ) {
+    pod2usage(-verbose => 2);
 }
 
-print "Read Config File\n";
-read_config( $params_file => my %hash);
+if ( ! defined $blast_db and ! defined $params_file ) {
+    pod2usage(-message => "Supply a blast_db or params_file",
+              -exit_status => 2,
+              -verbose => 0)
+}
 
-print "Building Filter\n\n";
-my $filter = BioUtils::QC::ContaminantFilter->new({
-                blast_db => $hash{'BLAST Parameters'}{'db'},
-                query_file => $hash{'BLAST Parameters'}{'query'},
-                output_dir => $hash{'Output'}{'dir'},
-                output_prefix => $hash{'Output'}{'prefix'},
-                keep_tmp => $hash{'Output'}{'keep_tmp'},
-                eval => $hash{'BLAST Parameters'}{'evalue'},
-                perc_iden => $hash{'BLAST Parameters'}{'perc_identity'},
-                output_fmt => $hash{'BLAST Parameters'}{'output_fmt'},
-                max_targets => $hash{'BLAST Parameters'}{'max_targets'},
-                otu_table => $hash{'OTU Table'}{'otu_table_file'},
-                });
+if ( ! defined $query_file and ! defined $params_file ) {
+    pod2usage(-message => "Supply a query_file or params_file",
+              -exit_status => 2,
+              -verbose => 0)
+}
 
-if ( $hash{'BLAST Parameters'}{'parallel'} =~ m/ON/i ) {
+if ( ! defined $output_dir ) { $output_dir = $OUTPUT_DIR; }
+if ( ! defined $output_prefix ) { $output_prefix = $OUTPUT_PREFIX; }
+if ( ! defined $keep_tmp ) { $keep_tmp = $KEEP_TMP; }
+if ( ! defined $eval ) { $eval = $EVAL; }
+if ( ! defined $perc_iden ) { $perc_iden = $PERC_IDEN; }
+if ( ! defined $output_fmt ) { $output_fmt = $OUTPUT_FMT; }
+if ( ! defined $max_targets ) { $max_targets = $MAX_TARGETS; }
+if ( ! defined $parallel ) { $parallel = $PARALLEL; }
+if ( ! defined $seqs_per_file ) { $seqs_per_file = $SEQS_PER_FILE; }
+if ( ! defined $queue ) { $queue = $QUEUE; }
+if ( ! defined $mem ) { $mem = $MEM; }
+
+
+
+
+
+if ( defined $params_file ) {
+    print "Read Config File\n";
+    read_config( $params_file => my %hash);
+    
+    $blast_db = $hash{'BLAST Parameters'}{'db'};
+    $query_file = $hash{'BLAST Parameters'}{'query'};
+    $output_dir = $hash{'Output'}{'dir'};
+    $output_prefix = $hash{'Output'}{'prefix'};
+    $keep_tmp = $hash{'Output'}{'keep_tmp'};
+    $eval = $hash{'BLAST Parameters'}{'evalue'};
+    $perc_iden = $hash{'BLAST Parameters'}{'perc_identity'};
+    $output_fmt = $hash{'BLAST Parameters'}{'output_fmt'};
+    $max_targets = $hash{'BLAST Parameters'}{'max_targets'};
+    $otu_table = $hash{'OTU Table'}{'otu_table_file'};
+    $parallel = $hash{'BLAST Parameters'}{'parallel'};
+    $seqs_per_file = $hash{'BLAST Parameters'}{'seqs_per_file'};
+    $queue = $hash{'BLAST Parameters'}{'queue'};
+    $mem = $hash{'BLAST Parameters'}{'mem'};
+}
+    
+    print "Building Filter\n\n";
+    my $filter = BioUtils::QC::ContaminantFilter->new({
+                    blast_db => $blast_db,
+                    query_file => $query_file,
+                    output_dir => $output_dir,
+                    output_prefix => $output_prefix,
+                    keep_tmp => $keep_tmp,
+                    eval => $eval,
+                    perc_iden => $perc_iden,
+                    output_fmt => $output_fmt,
+                    max_targets => $max_targets,
+                    otu_table => $otu_table
+                    });
+
+if ( $parallel =~ m/ON/i ) {
     print "Running Parallelized Filter\n\n";
-    $filter->run_filter(1, $hash{'BLAST Parameters'}{'seqs_per_file'});
+    $filter->run_filter(1, $seqs_per_file, $queue, $mem);
 }
 else {
     print "Running Filter\n\n";
@@ -81,18 +156,96 @@ filter_contaminants.pl - Filters out contaminant sequences using blastn
 
 =head1 VERSION
 
-This documentation refers to filter_contaminants.pl version 0.0.2
+This documentation refers to filter_contaminants.pl version 1.0.11
 
 
-=head1 USAGE
+=head1 SYNOPSIS
 
-perl filter_contaminants.pl --params_file <file>
+perl filter_contaminants.pl
+--params_file <file path>
+--blast_db <blast db path>
+--query_file <file path>
+--output_dir <dir path>
+--output_prefix <prefix str>
+--keep_tmp <on | off>
+--eval <decimanl>
+--perc_iden <int>
+--output_fmt <int>
+--max_targets <int>
+--otu_table <file path>
+--parallel <on | off>
+--seqs_per_file <int>
+--queue <bsub queue>
+--mem <bsub -M argument>
+--help
+--man
 
 
-=head1 REQUIRED ARGUMENTS
-    
-    --params_file
-        A file path to a file which contains all necessary and optional parameters
+=head1 ARGUMENTS
+
+=head2 --params_file
+
+A file path to a file which contains all necessary and optional parameters
+
+=head2 --blast_db
+
+Path to a blast formated database.  REQUIRED
+
+=head2 --query_file
+
+Path to file with query sequecnes in FASTA format.  REQUIRED
+
+=head2 --output_dir
+
+Path to directory where output will be printed.  DEFAULT: working directory
+
+=head2 --output_prefix
+
+String to prepend output files.  DEFAULT:  out
+
+=head2 --keep_tmp
+
+"On" or "Off" indicating if the temporary files should be kept.  DEFAULT:  off
+
+=head2 --eval
+
+The minimum evalue to be considered a contaminant.  DEFAULT:  0.00001
+
+=head2 --perc_iden
+
+The minimum percent identity to be considered a contaminant.  DEFAULT:  94
+
+=head2 --output_fmt
+
+The blast output format.  DEFAULT:  6
+
+=head2 --max_targets
+
+The number of blast targets to keep for each query sequence.  DEFAULT:  1
+
+=head2 --otu_table
+
+If these sequecnes are associtated and OTU table any sequences that are classified
+as contaminants will be seperated into a seperate OTU table.  DEFAULT: NA
+
+=head2 --parallel
+
+"On" or "Off" indicating a parallel run on an LSF cluster.  The source code will
+have to be modified if you are not using UNC's Kure or Killdevil cluster.
+DEFAULT:  Off
+
+=head2 --seqs_per_file
+
+For parallel runs, the number of sequence to put in each file for the parallel
+analysis.  DEFAULT: 10000
+
+=head2 --queue
+
+The bsub queue to which BLAST jobs should be submitted.  DEFAULT: bigmem
+
+=head2 --mem
+
+The bsub -M argument--amount of memory allocated for each BLAST job.  DEFAUL: 100
 
 
 =head1 DESCRIPTION
@@ -139,6 +292,8 @@ from which contaminant OTUs will be seperated from non-contaminant OTUs.
     perc_identity: 80
     parallel: ON
     seqs_per_file: 10000
+    queue: bigmem
+    mem: 100
     
     [OTU Table]
     otu_table_file: /home/me/my_otu_table_file.txt
@@ -172,6 +327,9 @@ from which contaminant OTUs will be seperated from non-contaminant OTUs.
     BioUtils::QC::ContaminantFilter 1.0.11
     Getopt::Long
     Config::Std
+    Pod::Usage
+    Readonly
+    Cwd
 
 
 =head1 BUGS AND LIMITATIONS
