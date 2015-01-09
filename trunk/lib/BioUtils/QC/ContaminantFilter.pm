@@ -62,12 +62,14 @@ use version; our $VERSION = qv('1.0.11');
     sub _run_parallel_blast;
     sub _split_FASTAs;
     sub _parse_blast_file;
+    sub _parse_blast_dir;
     sub _print_results;
     sub _sequence_printing;
     sub _otu_table_printing;
     sub _check_blastn_exe;
     sub _check_bsub_exe;
     sub _to_bool;
+    sub _rm_tmp_dirs;
     
     
     ###############
@@ -228,18 +230,28 @@ use version; our $VERSION = qv('1.0.11');
     sub run_filter {
         my ($self, $parallel_flag, $seq_per_file, $queue, $mem) = @_;
         
-        my $blast_output_file;
+        my $contaminant_names_href;
         if ( $parallel_flag ) {
             print "Run Parllel Blast\n";
-            $blast_output_file = $self->_run_parallel_blast($seq_per_file, $queue, $mem);
+            my $blast_output_dir = $self->_run_parallel_blast($seq_per_file, $queue, $mem);
+            print "\n\nBlast output file: $blast_output_dir\n\n";
+            
+            print "\n\nParse blast output\n\n";
+            $contaminant_names_href = $self->_parse_blast_dir($blast_output_dir);
+            
+            # remove tmp dirs if necessary
+            $self->_rm_tmp_dirs();
         }
         else {
-            $blast_output_file = $self->_run_blast();
+            print "Run Serial Blast\n";
+            my $blast_output_file = $self->_run_blast();
+            print "\n\nBlast output file: $blast_output_file\n\n";
+            
+            print "\n\nParse blast output\n\n";
+            $contaminant_names_href = $self->_parse_blast_file($blast_output_file);
         }
         
-        print "\n\nBlast output file: $blast_output_file\n\n";
-        
-        my $contaminant_names_href = $self->_parse_blast_file($blast_output_file);
+        print "\n\nPrint results\n\n";
         $self->_print_results($contaminant_names_href);
         
         return 1;
@@ -354,10 +366,6 @@ use version; our $VERSION = qv('1.0.11');
         if ( ! -d $log_dir ) {system("mkdir $log_dir");}
         if ( ! -d $blast_dir ) {system("mkdir $blast_dir");}
         
-        # create the blast output file
-        my ($fh, $output_file) = tempfile();
-        close($fh);
-        
         # store other variables for later usage
         my $database = $self->get_blast_db();
         my $evalue = $self->get_eval();
@@ -367,9 +375,9 @@ use version; our $VERSION = qv('1.0.11');
 
         
         # build and run the parallel blast commands
-        opendir (BLAST_DIR, "$fasta_dir")  or die $!;
-        my @blast_files = grep { $_ =~ '.*\.fasta$' } readdir(BLAST_DIR);
-        close(BLAST_DIR);
+        opendir (FASTA_DIR, "$fasta_dir")  or die $!;
+        my @blast_files = grep { $_ =~ '.*\.fasta$' } readdir(FASTA_DIR);
+        close(FASTA_DIR);
     
         foreach my $blast_file (@blast_files) {
             my $command = "bsub -q $queue " .
@@ -410,16 +418,7 @@ use version; our $VERSION = qv('1.0.11');
         }
         system("rm $output_dir/ACTIVE_JOB_CHECK");
         
-        # Merge all the split blast output files into one
-        system ("cat $blast_dir/*.bls > $output_file");
-        
-        # clean up the tmp directories unless keep_tmp is true
-        print "keep_tmp: " . $self->get_keep_tmp() . "\n";
-        if ( ! _to_bool($self->get_keep_tmp()) ) {
-            system("rm -rf $fasta_dir $blast_dir $log_dir");
-        }
-        
-        return $output_file;
+        return $blast_dir;
     }
     
     sub _split_FASTAs {
@@ -470,6 +469,27 @@ use version; our $VERSION = qv('1.0.11');
             chomp $line;
             my @values = split /\t/, $line;
             $contaminant_names{$values[0]} = $values[1];
+        }
+        
+        return \%contaminant_names;
+    }
+    
+    sub _parse_blast_dir {
+        my ($self, $dir) = @_;
+        
+        # I created this method because I was running out of memory when I
+        # tried concatenating all the blast output files into one file.
+        # This method process all the blast output files independently.
+        
+        my %contaminant_names = ();  # NAME => contaminantX
+        
+        opendir (DIR, "$dir")  or die $!;
+        my @blast_files = grep { $_ =~ '.*\.bls$' } readdir(DIR);
+        close(DIR);
+        
+        foreach my $blast_file (@blast_files) {
+            %contaminant_names = (%contaminant_names,
+                                  %{$self->_parse_blast_file("$dir/$blast_file")})
         }
         
         return \%contaminant_names;
@@ -624,6 +644,22 @@ use version; our $VERSION = qv('1.0.11');
 		# else -- meaning no parallel
 		return 0;
 	}
+    
+    sub _rm_tmp_dirs {
+        my ($self) = @_;
+        
+        # There are 3 tmp dirs: fasta files, blast output files, log files
+        # They are all created in $output_dir
+        
+        # clean up the tmp directories unless keep_tmp is true
+        if ( ! _to_bool($self->get_keep_tmp()) ) {
+            print "\n\nRemove temp dirs\n\n";
+            my $dir = $self->get_output_dir();
+            system("rm -rf $dir/tmp_fasta/ $dir/tmp_blasts/ $dir/tmp_logs/");
+        }
+        
+        return 1;
+    }
 }
 
 
@@ -733,12 +769,14 @@ This document describes BioUtils::QC::ContaminantFilter version 1.0.11
     _run_parallel_blast
     _split_FASTAs
     _parse_blast_file
+    _parse_blast_dir
     _print_results
     _sequence_printing
     _otu_table_printing
     _check_blastn_exe
     _check_bsub_exe
     _to_bool
+    _rm_tmp_dirs
 
 =head1 DIAGNOSTICS
 
@@ -1131,6 +1169,21 @@ None reported.
 	Comments: The contaminant names are used by _print_results
 	See Also: NA
     
+=head2 _parse_blast_dir
+
+    Title: _parse_blast_dir
+    Usage: $contam_filter->_parse_blast_dir();
+    Function: Parses the blast output dir
+    Returns: Hash ref of contaminant names
+    Args: NA
+	Throws: NA
+	Comments: The contaminant names are used by _print_results.  I included this
+              method because I was running out of memory when trying to cat a
+              large number of large blast results files.  This method creates
+              the hash ref of contaminant names by looking at the  blast results
+              files individually.
+	See Also: NA
+    
 =head2 _print_results
 
     Title: _print_results
@@ -1202,6 +1255,17 @@ None reported.
 	Comments: Valid true values include: Y YES Yes y yes t true True TRUE.
               Everything else is interpreted as false.  The return values for
               a boolean in perl are 1 (true) and 0 (false).
+	See Also: NA
+    
+=head2 _rm_tmp_dirs
+
+    Title: _rm_tmp_dirs
+    Usage: _rm_tmp_dirs();
+    Function: Removes the temp dirs created in a parallel blast run
+    Returns: 1 on successful completion
+    Args: NA
+	Throws: NA
+	Comments: NA
 	See Also: NA
     
 

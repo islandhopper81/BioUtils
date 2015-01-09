@@ -1,6 +1,6 @@
 
 use BioUtils::QC::ContaminantFilter 1.0.11;
-use Test::More tests => 53;
+use Test::More tests => 55;
 use Test::Exception;
 use File::Temp qw(tempfile tempdir);
 use IPC::Cmd qw(can_run);
@@ -143,6 +143,17 @@ my $blast_output;
     #print "blast_output: $blast_output\n";
 }
 
+# test _parse_blast_file
+my $got; # This is also used in _print_results. It gets reset in _parse_blast_dir
+{
+    my $expected = {'OTU_7'  => 'Arabidopsis_thaliana_chloroplast_rRNA_AP000423.1',
+                    'OTU_10' => 'Arabidopsis_thaliana_chloroplast_rRNA_AP000423.1'};
+
+    lives_ok( sub{ $got = $filter->_parse_blast_file($blast_output) },
+             '_parse_blast_file - lives');
+    is_deeply( $got, $expected, "_parse_blast_file() - deeply" );
+}
+
 # test split_FASTAs
 {
     # split_FASTAs is only used in _run_parallel_blast
@@ -158,27 +169,29 @@ my $blast_output;
 }
 
 # test _run_parallel_blast
+my $blast_dir;
 SKIP: {
     skip "Not on LSF cluster", 2 if (! can_run("bsub"));
     
-    lives_ok( sub{ $blast_output = $filter->_run_parallel_blast(2, "week", 2) },
+    lives_ok( sub{ $blast_dir = $filter->_run_parallel_blast(2, "week", 2) },
              '_run_parallel_blast() - lives' );
     
-    is( -s $blast_output > 0, 1, 'blast file created');
+    is( -d $blast_dir, 1, 'blast dir created');
 }
 
-#
-## test _parse_blast_file
-my $got; # This is also used in _sequence_printing
-{
+# test _parse_blast_dir
+SKIP: {
+    skip "Not on LSF cluster", 2 if (! can_run("bsub"));
+    
     my $expected = {'OTU_7'  => 'Arabidopsis_thaliana_chloroplast_rRNA_AP000423.1',
                     'OTU_10' => 'Arabidopsis_thaliana_chloroplast_rRNA_AP000423.1'};
 
-    lives_ok( sub{ $got = $filter->_parse_blast_file($blast_output) },
-             '_parse_blast_file - lives');
-    is_deeply( $got, $expected, "_parse_blast_file() - deeply" );
+    lives_ok( sub{ $got = $filter->_parse_blast_dir($blast_dir) },
+             '_parse_blast_dir - lives');
+    is_deeply( $got, $expected, "_parse_blast_dir() - deeply" );
+    
+    # NOTE: the $got variable aldo gets used in _print_results
 }
-
 
 # test _sequence_printing
 {
