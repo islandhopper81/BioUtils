@@ -1,6 +1,7 @@
 Revision history for BioUtils
 
 1.0.11	Under development
+	- fastq option for filter_contaminants.pl
 	- Removed cat command from parallel contaminant filtering to improve
 	  memory efficiency.
 	- Added some bsub parameter options to filter_contaminants

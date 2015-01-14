@@ -11,6 +11,8 @@ use warnings;
 use version; our $VERSION = qv('1.0.11');
 
 use BioUtils::QC::ContaminantFilter 1.0.11;
+use BioUtils::FastqIO 1.0.11;
+use BioUtils::FastaIO 1.0.11;
 use Getopt::Long;
 use Config::Std;
 use Pod::Usage;
@@ -34,14 +36,15 @@ print "Start\n\n";
 
 # Variables to be set by GetOpts and their defaults
 my $params_file = undef;
-my ($blast_db, $query_file, $output_dir, $output_prefix, $keep_tmp, $eval,
-    $perc_iden, $output_fmt, $max_targets, $otu_table, $parallel, $seqs_per_file,
-    $queue, $mem, $help, $man);
+my ($blast_db, $query_file, $fastq, $output_dir, $output_prefix, $keep_tmp,
+    $eval, $perc_iden, $output_fmt, $max_targets, $otu_table, $parallel,
+    $seqs_per_file, $queue, $mem, $help, $man);
 
 my $options_okay = GetOptions (
     "params_file:s" => \$params_file,  # string
     "blast_db:s" => \$blast_db,
     "query_file:s" => \$query_file,
+    "fastq" => \$fastq, # flag
     "output_dir:s" => \$output_dir,
     "output_prefix:s" => \$output_prefix,
     "keep_tmp:s" => \$keep_tmp,
@@ -118,20 +121,41 @@ if ( defined $params_file ) {
     $queue = $hash{'BLAST Parameters'}{'queue'};
     $mem = $hash{'BLAST Parameters'}{'mem'};
 }
+
+# make a temp fasta file if necessary
+if ( $fastq ) {
+    my $tmp_fasta = $query_file . ".fasta.tmp";
     
-    print "Building Filter\n\n";
-    my $filter = BioUtils::QC::ContaminantFilter->new({
-                    blast_db => $blast_db,
-                    query_file => $query_file,
-                    output_dir => $output_dir,
-                    output_prefix => $output_prefix,
-                    keep_tmp => $keep_tmp,
-                    eval => $eval,
-                    perc_iden => $perc_iden,
-                    output_fmt => $output_fmt,
-                    max_targets => $max_targets,
-                    otu_table => $otu_table
-                    });
+    print "Making temporary fasta file: $tmp_fasta";
+    my $in_fastq = BioUtils::FastqIO->new({
+                            stream_type => '<',
+                            file => "$query_file"
+                        });
+    my $out_fasta = BioUtils::FastaIO->new({
+                            stream_type => '>',
+                            file => "$tmp_fasta"
+                        });
+    
+    while ( my $fastq_seq = $in_fastq->get_next_seq() ) {
+        $out_fasta->write_seq($fastq_seq->to_FastaSeq);
+    }
+    
+    $query_file = $tmp_fasta;
+}
+    
+print "Building Filter\n\n";
+my $filter = BioUtils::QC::ContaminantFilter->new({
+                blast_db => $blast_db,
+                query_file => $query_file,
+                output_dir => $output_dir,
+                output_prefix => $output_prefix,
+                keep_tmp => $keep_tmp,
+                eval => $eval,
+                perc_iden => $perc_iden,
+                output_fmt => $output_fmt,
+                max_targets => $max_targets,
+                otu_table => $otu_table
+                });
 
 if ( $parallel =~ m/ON/i ) {
     print "Running Parallelized Filter\n\n";
@@ -140,6 +164,11 @@ if ( $parallel =~ m/ON/i ) {
 else {
     print "Running Filter\n\n";
     $filter->run_filter();
+}
+
+# remove temp fasta if neccessary
+if ( $fastq ) {
+    `rm $query_file`;
 }
 
 print "Finished\n\n";
@@ -165,6 +194,7 @@ perl filter_contaminants.pl
 --params_file <file path>
 --blast_db <blast db path>
 --query_file <file path>
+--fastq
 --output_dir <dir path>
 --output_prefix <prefix str>
 --keep_tmp <on | off>
@@ -194,6 +224,12 @@ Path to a blast formated database.  REQUIRED
 =head2 --query_file
 
 Path to file with query sequecnes in FASTA format.  REQUIRED
+
+=head2 --fastq
+
+Flag indicating that input query files are in FASTQ format.  A temporary query
+FASTA file will be created for downstream analysis.  The temporary file will be
+removed when analysis is complete.
 
 =head2 --output_dir
 
