@@ -1,6 +1,7 @@
 Revision history for BioUtils
 
 1.0.11	Under development
+	- added file option to input a fasta on reverse_complement.pl
 	- fastq option for filter_contaminants.pl
 	- Removed cat command from parallel contaminant filtering to improve
 	  memory efficiency.
