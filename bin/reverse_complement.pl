@@ -8,16 +8,19 @@ use warnings;
 use Getopt::Long;
 use Pod::Usage;
 use Carp;
+use BioUtils::FastaIO;
 
 # Subroutines #
 sub my_reverse;
 sub my_complement;
+sub _operations;
 
 # Variables #
-my ($str, $rev_flag, $comp_flag, $help);
+my ($str, $file, $rev_flag, $comp_flag, $help);
 
 my $options_okay = GetOptions (
     "str:s" => \$str,
+	"file:s" => \$file,
     "rev_flag" => \$rev_flag,
     "comp_flag" => \$comp_flag,
     "help" => \$help,                  # flag
@@ -25,19 +28,24 @@ my $options_okay = GetOptions (
 
 # check for input errors
 if ( $help ) { pod2usage(2) }
-if ( ! defined $str ) { pod2usage(2) }
+if ( ! defined $str and ! defined $file ) { pod2usage(2) }
 
 # MAIN
-if ( $rev_flag ) {
-    print my_reverse($str), "\n";
-}
-elsif ( $comp_flag ) {
-    print my_complement($str), "\n";
+if ( -s $file ) {
+	# create the bioUtils fasta file object
+	my $in = BioUtils::FastaIO->new({stream_type => '<', file => $file});
+	while ( my $seq = $in->get_next_seq() ) {
+		my $new_seq = _operations($seq->get_seq());
+		$seq->set_seq($new_seq);
+		print ">", $seq->get_header(), "\n";
+		print $seq->get_seq(), "\n";
+	}
 }
 else {
-    # both reverse and complement
-    print my_complement(my_reverse($str)), "\n";
+	print _operations($str);
 }
+
+
 
 
 
@@ -45,6 +53,28 @@ else {
 ########
 # Subs #
 ########
+sub _operations {
+	my ($str) = @_;
+	
+	my $new_str;
+	
+	if ( $rev_flag and $comp_flag ) {
+		# both reverse and complement
+		$new_str = my_complement(my_reverse($str));
+	}
+	elsif ( $rev_flag ) {
+		$new_str = my_reverse($str);
+	}
+	elsif ( $comp_flag ) {
+		$new_str = my_complement($str);
+	}
+	else {
+		warn "ERROR";
+	}
+	
+	return $new_str;
+}
+
 sub my_reverse {
     my ($str) = @_;
     my $ans = scalar reverse $str;
@@ -77,12 +107,15 @@ This documentation refers to reverse_complement.pl version 0.0.1
 
 =head1 SYNOPSIS
 
-    reverse_complement.pl --str ATGTA
-                      [--rev_flag]
-                      [--comp_flag]
-                      [--help]
+    reverse_complement.pl
+					--str ATGTA
+					[--file <file.fasta>]
+                    [--rev_flag]
+                    [--comp_flag]
+                    [--help]
 
     --str  = DNA string to reverse complement
+	--file = A fasta file with DNA sequences
     --rev_flag   = ONLY reverse the string
     --comp_flag  = ONLY complement the string
     --help  = Prints USAGE statement
@@ -93,6 +126,11 @@ This documentation refers to reverse_complement.pl version 0.0.1
 =head2 --str
 
 DNA string to reverse complement
+
+=head2 [--file <file.fasta>]
+
+Alternitively to inputing a DNA sequence directly this options allows users to
+pass a fasta file.  The resulting sequecnes will be printed to the screen.
     
 =head2 [--rev_flag]
 
@@ -122,6 +160,7 @@ No special configurations or environment variables needed
 Getopt::Long
 Pod::Usage
 Carp
+BioUtils::FASTAIO
 
 
 =head1 AUTHOR
