@@ -12,6 +12,8 @@ my $builder = Module::Build->new(
         'version'    => 0,
     },
 	build_requires => {
+		'Bio::SeqIO' => 0,
+		'Bio::Tools::GFF' => 0,
 		'Carp' => 0,
 		'Chart::Graph::Gnuplot' => 0,
 		'Class::Std::Utils' => 0,
