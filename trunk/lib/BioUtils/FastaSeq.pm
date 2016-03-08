@@ -8,7 +8,7 @@ use Class::Std::Utils;
 use List::MoreUtils qw(any);
 use Readonly;
 use Scalar::Util qw(looks_like_number);
-use MyX::Generic 1.0.11;
+use MyX::Generic 0.0.1;
 use version; our $VERSION = qv('1.0.11');
 
 {
