@@ -24,7 +24,6 @@ lib/BioUtils/MyX/Fastq.pm
 lib/BioUtils/MyX/ConsensusBuilder.pm
 lib/BioUtils/SeqSet/Diagnostics.pm
 lib/BioUtils/FileReformat/GbkToGff.pm
-lib/MyX/Generic.pm
 bin/fastq_filter.pl
 bin/filter_contaminants.pl
 bin/reverse_complement.pl
