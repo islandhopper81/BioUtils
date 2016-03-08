@@ -25,6 +25,8 @@ gnuplot
 clustalw
 BLAST 2.2.25+ (command line version; needed only for QC::ContaminantFilter)
 
+Bio::SeqIO
+Bio::Tools::GFF
 Carp
 Chart::Graph::Gnuplot
 Class::Std::Utils
