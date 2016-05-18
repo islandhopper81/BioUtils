@@ -36,6 +36,7 @@ use version; our $VERSION = qv('1.0.11');
     sub to_FastaSeq;
     sub trim_back;
     sub trim_front;
+    sub substr;
     sub rev_comp;
     sub rev;
     sub comp;
@@ -133,7 +134,7 @@ use version; our $VERSION = qv('1.0.11');
             );
         }
         
-        my $qual = _encoding_to_dec(substr $quals_str_of{ident $self}, $index, 1);
+        my $qual = _encoding_to_dec(CORE::substr $quals_str_of{ident $self}, $index, 1);
         
         return $qual;
     }
@@ -199,10 +200,10 @@ use version; our $VERSION = qv('1.0.11');
         
         my $seq = $self->get_seq();
         my $qual = $self->get_quals_str();
-        my $keep_seq = substr $seq, -((length $seq) - $len);
-        my $keep_qual = substr $qual, -((length $seq) - $len);
-        my $trim_seq = substr $seq, 0, $len;
-        my $trim_qual = substr $qual, 0, $len;
+        my $keep_seq = CORE::substr $seq, -((length $seq) - $len);
+        my $keep_qual = CORE::substr $qual, -((length $seq) - $len);
+        my $trim_seq = CORE::substr $seq, 0, $len;
+        my $trim_qual = CORE::substr $qual, 0, $len;
         
         my $trimmed_seq_obj = BioUtils::FastqSeq->new({
             header => $self->get_header(),
@@ -246,10 +247,10 @@ use version; our $VERSION = qv('1.0.11');
         
         my $seq = $self->get_seq();
         my $qual = $self->get_quals_str();
-        my $trim_seq = substr $seq, -$len;
-        my $trim_qual = substr $qual, -$len;
-        my $keep_seq = substr $seq, 0, (length $seq) - $len;
-        my $keep_qual = substr $qual, 0, (length $seq) - $len;
+        my $trim_seq = CORE::substr $seq, -$len;
+        my $trim_qual = CORE::substr $qual, -$len;
+        my $keep_seq = CORE::substr $seq, 0, (length $seq) - $len;
+        my $keep_qual = CORE::substr $qual, 0, (length $seq) - $len;
         
         my $trimmed_seq_obj = BioUtils::FastqSeq->new({
             header => $self->get_header(),
@@ -261,6 +262,70 @@ use version; our $VERSION = qv('1.0.11');
         $self->set_quals_str($keep_qual);
         
         return $trimmed_seq_obj;
+    }
+    
+    sub substr {
+        my ($self, $start, $end) = @_;
+        
+        if ( ! defined $start ) {
+            MyX::Generic::Undef::Param->throw(
+                error => 'start parameter not defined',
+                usage => '$fastq_seq->substr(10, 20)'
+            );
+        }
+        if ( ! defined $end ) {
+            MyX::Generic::Undef::Param->throw(
+                error => 'end parameter not defined',
+                usage => '$fastq_seq->substr(10, 20)'
+            );
+        }
+        if ( ! looks_like_number($start) ) {
+            MyX::Generic::Digit::MustBeDigit->throw(
+                error => "substr start requires digit > 0",
+                value => $start,
+            );
+        }
+        if ( ! looks_like_number($end) ) {
+            MyX::Generic::Digit::MustBeDigit->throw(
+                error => "substr end requires digit > 0",
+                value => $end,
+            );
+        }
+        if ( $start < 0 ) {
+             MyX::Generic::Digit::TooSmall->throw(
+                error => "start requires digit > 0",
+                value => $start,
+                MIN => 0,
+            )
+        }
+        if ( $end < 0 ) {
+             MyX::Generic::Digit::TooSmall->throw(
+                error => "end requires digit > 0",
+                value => $end,
+                MIN => 0,
+            )
+        }
+        if ( $start > $end ) {
+            MyX::Generic::Digit::TooBig->throw(
+                error => "end is larger than start",
+                value => $end,
+                MAX => "must be larger than start parameter"
+            )
+        }
+        
+        my $seq = $self->get_seq();
+        my $quals = $self->get_quals_str();
+        my $len = $end - $start + 1;
+        my $seq_substr = CORE::substr $seq, $start, $len;
+        my $quals_substr = CORE::substr $quals, $start, $len;
+        
+        my $seq_substr_obj = BioUtils::FastqSeq->new({
+            header => $self->get_header(),
+            seq => $seq_substr,
+            quals_str => $quals_substr
+        });
+        
+        return $seq_substr_obj;
     }
     
     sub rev_comp {
@@ -376,14 +441,17 @@ This documentation refers to FastqSeq version 1.0.11.
     my $trimmed_portion = $fastq_seq->trim_front(2);
     my $trimmed_portion = $fastq_seq->trim_back(2);
     
+    # get a substr of the sequence
+    my $substr = $fastq_seq->get_substr(2,4);
+    
     # reverse the sequence
-    $fasta_seq->rev();
+    $fastq_seq->rev();
     
     # complement the sequence
-    $fasta_seq->comp();
+    $fastq_seq->comp();
     
     # reverse complement the sequence
-    $fasta_seq->rev_comp();
+    $fastq_seq->rev_comp();
     
 
 =head1 DESCRIPTION
@@ -417,6 +485,7 @@ values can be accessed as a string or array reference.
     to_FastaSeq
     trim_front
     trim_back
+    substr
     rev
     comp
     rev_comp
@@ -586,6 +655,24 @@ values can be accessed as a string or array reference.
               don't store the return value).
     See Also: NA
     
+=head2 substr
+
+    Title: substr
+    Usage: my $substr_seq = $my_fastq_seq->substr($start, $end);
+    Function: Get a substring as a new FastqSeq object
+    Returns: BioUtils::FastqSeq
+    Args: -start => start position of substring
+          -end => end position of substring
+    Throws: MyX::Generic::Undef:Param
+            MyX::Generic::Digit::MustBeDigit
+            MyX::Generic::Digit::TooSmall
+            MyX::Generic::Digit::TooBig
+    Comments: The start and end positions assume the first base is at position
+              0.  So if the sequence is "ATCGATCG" and the start position is 2
+              and the end position is 5 the returned BioUtils::FastqSeq object
+              has a sequence of CGA
+    See Also: NA
+    
 =head2 rev
     
     Title: rev
@@ -672,7 +759,7 @@ FastaSeq requires no configuration files or environment variables.
 No bugs have been reported.
 
 Please report any bugs or feature requests to
-C<bug-fastaseq@rt.cpan.org>, or through the web interface at
+C<bug-fastqseq@rt.cpan.org>, or through the web interface at
 L<http://rt.cpan.org>.
 
 

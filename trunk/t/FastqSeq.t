@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 use BioUtils::FastqSeq;
-use Test::More tests => 74;
+use Test::More tests => 91;
 use Test::Exception;
 
 BEGIN { use_ok( 'BioUtils::FastqSeq' ); }
@@ -207,6 +207,84 @@ is( BioUtils::FastqSeq::_dec_to_encoding(0), '!', "_dec_to_encoding(0)" );
     is( $trimmed_obj->get_quals_str(), "BB", "trim_back(2) - check qual seq" );
     is( $seq_obj->get_seq(), "ATCGAT", "trim_back(2) - check kept seq" );
     is( $seq_obj->get_quals_str(), "AAAABB", "trim_back(2) - check kept quals" );
+}
+
+
+# test substr method
+{
+    my $header = "seq1";
+    my $seq = "ATCGATCG";
+    my $qual = "AAAABBBB";
+    
+    my $seq_obj = BioUtils::FastqSeq->new({
+        header => $header,
+        seq => $seq,
+        quals_str => $qual,
+    });
+    
+    my $substr_obj;
+    
+    # test when no parameters are given
+    throws_ok( sub{ $seq_obj->substr() },
+              'MyX::Generic::Undef::Param',
+              "substr() - throws" );
+    throws_ok( sub{ $seq_obj->substr() },
+              qr/start parameter not defined/,
+              "substr() - throws" );
+    
+    # test when no end parameter is given
+    throws_ok( sub{ $seq_obj->substr(1) },
+              'MyX::Generic::Undef::Param',
+              "substr(1) - throws" );
+    throws_ok( sub{ $seq_obj->substr(1) },
+              qr/end parameter not defined/,
+              "substr(1) - throws" );
+    
+    # test when a non-number is given as start
+    throws_ok( sub{ $seq_obj->substr("a", 1) },
+              'MyX::Generic::Digit::MustBeDigit',
+              "substr(a) - throws" );
+    throws_ok( sub{ $seq_obj->substr("a", 1) },
+              qr/substr start requires digit > 0/,
+              "substr(a) - throws" );
+    
+    # test when a non-number is given as end
+    throws_ok( sub{ $seq_obj->substr(1, "a") },
+              'MyX::Generic::Digit::MustBeDigit',
+              "substr(1,a) - throws" );
+    throws_ok( sub{ $seq_obj->substr(1, "a") },
+              qr/substr end requires digit > 0/,
+              "substr(1,a) - throws" );
+    
+    # test when a negative number is given as the start param
+    throws_ok( sub{ $seq_obj->substr(-1, 2) },
+              'MyX::Generic::Digit::TooSmall',
+              "substr(-1,2) - throws" );
+    throws_ok( sub{ $seq_obj->substr(-1, 2) },
+              qr/start requires digit > 0/,
+              "substr(-1,2) - throws" );
+    
+    # test when a negative number is given as the end param
+    throws_ok( sub{ $seq_obj->substr(1, -2) },
+              'MyX::Generic::Digit::TooSmall',
+              "substr(1,-2) - throws" );
+    throws_ok( sub{ $seq_obj->substr(1, -2) },
+              qr/end requires digit > 0/,
+              "substr(1,-2) - throws" );
+    
+    # test when the end is smaller than the start
+    throws_ok( sub{ $seq_obj->substr(3,2) },
+               'MyX::Generic::Digit::TooBig',
+               "substr(3,2) - throws" );
+    throws_ok( sub{ $seq_obj->substr(3,2) },
+              qr/end is larger than start/,
+              "substr(3,2) - throws" );
+    
+    # test a good run of trim_back
+    lives_ok( sub{ $substr_obj = $seq_obj->substr(2,4) },
+             "substr(2, 4) - lives" );
+    is( $substr_obj->get_seq(), "CGA", "substr(2,4) - check substr seq" );
+    is( $substr_obj->get_quals_str(), "AAB", "substr(2,4) - check substr quals" );
 }
 
 

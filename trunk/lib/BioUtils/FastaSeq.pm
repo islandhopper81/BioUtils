@@ -26,6 +26,7 @@ use version; our $VERSION = qv('1.0.11');
     sub set_seq;
     sub trim_front;
     sub trim_back;
+    sub substr;
     sub rev;
     sub comp;
     sub rev_comp;
@@ -135,8 +136,8 @@ use version; our $VERSION = qv('1.0.11');
         }
         
         my $seq = $self->get_seq();
-        my $keep_seq = substr $seq, -((length $seq) - $len);
-        my $trim_seq = substr $seq, 0, $len;
+        my $keep_seq = CORE::substr $seq, -((length $seq) - $len);
+        my $trim_seq = CORE::substr $seq, 0, $len;
         
         my $trimmed_seq_obj = BioUtils::FastaSeq->new({
             header => $self->get_header(),
@@ -176,8 +177,8 @@ use version; our $VERSION = qv('1.0.11');
         }
         
         my $seq = $self->get_seq();
-        my $trim_seq = substr $seq, -$len;
-        my $keep_seq = substr $seq, 0, (length $seq) - $len;
+        my $trim_seq = CORE::substr $seq, -$len;
+        my $keep_seq = CORE::substr $seq, 0, (length $seq) - $len;
         
         my $trimmed_seq_obj = BioUtils::FastaSeq->new({
             header => $self->get_header(),
@@ -187,6 +188,67 @@ use version; our $VERSION = qv('1.0.11');
         $self->set_seq($keep_seq);
         
         return $trimmed_seq_obj;
+    }
+    
+    sub substr {
+        my ($self, $start, $end) = @_;
+        
+        if ( ! defined $start ) {
+            MyX::Generic::Undef::Param->throw(
+                error => 'start parameter not defined',
+                usage => '$fasta_seq->substr(10, 20)'
+            );
+        }
+        if ( ! defined $end ) {
+            MyX::Generic::Undef::Param->throw(
+                error => 'end parameter not defined',
+                usage => '$fasta_seq->substr(10, 20)'
+            );
+        }
+        if ( ! looks_like_number($start) ) {
+            MyX::Generic::Digit::MustBeDigit->throw(
+                error => "substr start requires digit > 0",
+                value => $start,
+            );
+        }
+        if ( ! looks_like_number($end) ) {
+            MyX::Generic::Digit::MustBeDigit->throw(
+                error => "substr end requires digit > 0",
+                value => $end,
+            );
+        }
+        if ( $start < 0 ) {
+             MyX::Generic::Digit::TooSmall->throw(
+                error => "start requires digit > 0",
+                value => $start,
+                MIN => 0,
+            )
+        }
+        if ( $end < 0 ) {
+             MyX::Generic::Digit::TooSmall->throw(
+                error => "end requires digit > 0",
+                value => $end,
+                MIN => 0,
+            )
+        }
+        if ( $start > $end ) {
+            MyX::Generic::Digit::TooBig->throw(
+                error => "end is larger than start",
+                value => $end,
+                MAX => "must be larger than start parameter"
+            )
+        }
+        
+        my $seq = $self->get_seq();
+        my $len = $end - $start + 1;
+        my $seq_substr = CORE::substr $seq, $start, $len;
+        
+        my $seq_substr_obj = BioUtils::FastaSeq->new({
+            header => $self->get_header(),
+            seq => $seq_substr,
+        });
+        
+        return $seq_substr_obj;
     }
     
     sub rev_comp {
@@ -257,6 +319,9 @@ This document describes BioUtils::FastaSeq version 1.0.11
     my $trimmed_portion = $fasta_seq->trim_front(2);
     my $trimmed_portion = $fasta_seq->trim_back(2);
     
+    # get a substr of the sequence
+    my $substr = $fasta_seq->get_substr(2,4);
+    
     # reverse the sequence
     $fasta_seq->rev();
     
@@ -283,6 +348,7 @@ This document describes BioUtils::FastaSeq version 1.0.11
     set_seq
     trim_front
     trim_back
+    substr
     rev
     comp
     rev_comp
@@ -398,35 +464,53 @@ BioUtils::FastaSeq requires no configuration files or environment variables.
 =head2 trim_front
     
     Title: trim_front
-    Usage: my $trimmed_portion = $my_fastq_seq->trim_front($num);
+    Usage: my $trimmed_portion = $my_fasta_seq->trim_front($num);
     Function: Trims X bases off the front of the FastaSeq object
     Returns: BioUtils::FastaSeq
     Args: -num => the number of bases to trim off the front
     Throws: MyX::Generic::Digit::MustBeDigit
             MyX::Generic::Digit::TooSmall
     Comments: The part that is trimmed off is returned.  To ignore/trash that
-              simply call the method like $my_fastq_seq->trim_front(2) (i.e.
+              simply call the method like $my_fasta_seq->trim_front(2) (i.e.
               don't store the return value).
     See Also: NA
     
 =head2 trim_back
     
     Title: trim_back
-    Usage: my $trimmed_portion = $my_fastq_seq->trim_back($num);
+    Usage: my $trimmed_portion = $my_fasta_seq->trim_back($num);
     Function: Trims X bases off the back of the FastaSeq object
     Returns: BioUtils::FastaSeq
     Args: -num => the number of bases to trim off the back
     Throws: MyX::Generic::Digit::MustBeDigit
             MyX::Generic::Digit::TooSmall
     Comments: The part that is trimmed off is returned.  To ignore/trash that
-              simply call the method like $my_fastq_seq->trim_back(2) (i.e.
+              simply call the method like $my_fasta_seq->trim_back(2) (i.e.
               don't store the return value).
+    See Also: NA
+    
+=head2 substr
+
+    Title: substr
+    Usage: my $substr_seq = $my_fasta_seq->substr($start, $end);
+    Function: Get a substring as a new FastaSeq object
+    Returns: BioUtils::FastaSeq
+    Args: -start => start position of substring
+          -end => end position of substring
+    Throws: MyX::Generic::Undef:Param
+            MyX::Generic::Digit::MustBeDigit
+            MyX::Generic::Digit::TooSmall
+            MyX::Generic::Digit::TooBig
+    Comments: The start and end positions assume the first base is at position
+              0.  So if the sequence is "ATCGATCG" and the start position is 2
+              and the end position is 5 the returned BioUtils::FastaSeq object
+              has a sequence of CGA
     See Also: NA
     
 =head2 rev
     
     Title: rev
-    Usage: $my_fastq_seq->rev();
+    Usage: $my_fasta_seq->rev();
     Function: Reverse the sequence
     Returns: 1 on successful completion
     Args: NA
@@ -437,7 +521,7 @@ BioUtils::FastaSeq requires no configuration files or environment variables.
 =head2 comp
     
     Title: comp
-    Usage: $my_fastq_seq->comp();
+    Usage: $my_fasta_seq->comp();
     Function: Compelements the sequence
     Returns: 1 on successful completion
     Args: NA
@@ -448,7 +532,7 @@ BioUtils::FastaSeq requires no configuration files or environment variables.
 =head2 rev_comp
     
     Title: rev_comp
-    Usage: $my_fastq_seq->rev_comp();
+    Usage: $my_fasta_seq->rev_comp();
     Function: Reverse compelements the sequence
     Returns: 1 on successful completion
     Args: NA
