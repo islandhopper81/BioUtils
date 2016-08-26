@@ -3,8 +3,9 @@ use strict;
 use warnings;
 
 use BioUtils::FastaSeq;
-use Test::More tests => 58;
+use Test::More tests => 62;
 use Test::Exception;
+use Test::Warn;
 
 BEGIN { use_ok( 'BioUtils::FastaSeq' ); }
 
@@ -247,6 +248,36 @@ throws_ok( sub { $fasta_seq->get_id() }, qr/Undefined header/, "get_id() - caugh
     lives_ok( sub{ $seq_obj->rev_comp() },
               "rev_comp() - lives" );
     is( $seq_obj->get_seq(), $seq_rev_comp, "rev_comp() - get_seq" );
+}
+
+# test translate method
+{
+    my $header = "seq1";
+    my $seq = "ATCGATCGA";
+    my $seq_obj = BioUtils::FastaSeq->new({
+        header => $header,
+        seq => $seq,
+    });
+    my $translation = "IDR";
+    
+    # test if the above sequence runs without errors
+    lives_ok( sub{ $seq_obj->translate() },
+              "translate() - lives" );
+    
+    # make sure it go the right answer
+    is( $seq_obj->get_seq(), $translation, "translate() - get_seq" );
+    
+    # check what happens when the sequence is not divisible by 3
+    $seq_obj->set_seq($seq . "AT");
+    warning_is {$seq_obj->translate()}
+        "Seq (seq1) is not divisible by 3.  Trailing bases are ignored.",
+        "translate gives not divisible by 3 warning";
+        
+    # check what happens when there is a not translatable codon
+    $seq_obj->set_seq("---");
+    throws_ok( sub{ $seq_obj->translate() },
+              qr/Bad codon/,
+              "translate() - throws bad codon" );
 }
 
 
