@@ -377,6 +377,9 @@ This document describes BioUtils::FastaSeq version 1.0.11
     
     # reverse complement the sequence
     $fasta_seq->rev_comp();
+    
+    # translate the sequence
+    $fasta_seq->translate();
   
   
 =head1 DESCRIPTION
@@ -399,6 +402,7 @@ This document describes BioUtils::FastaSeq version 1.0.11
     rev
     comp
     rev_comp
+    translate
 
 
 =head1 DIAGNOSTICS
@@ -430,6 +434,7 @@ BioUtils::FastaSeq requires no configuration files or environment variables.
     Readonly
     Scalar::Util qw(looks_like_number)
     MyX::Generic 1.0.11
+    BioUtils::MyX::Fasta
     version our $VERSION = qv('1.0.11')
 
 
@@ -585,6 +590,22 @@ BioUtils::FastaSeq requires no configuration files or environment variables.
     Args: NA
     Throws: NA
     Comments: NA
+    See Also: NA
+    
+=head2 translate
+    
+    Title: translate
+    Usage: $my_fasta_seq->translate();
+    Function: Translates a nucleotide sequence to amino acids
+    Returns: 1 on successful completion
+    Args: NA
+    Throws: BioUtils::MyX::Fasta::BadCodon
+    Comments: This assumes the nucleotide sequence stored in this object is
+              alread in frame.  It also throws a warning if there are trailing
+              bases.  Those trailing bases are ignored (ie dropped, ie not
+              translated).  This function also assumes the sequence is a
+              nucleotide sequence.  If it is not you will likely throw a
+              BioUtils::MyX::Fasta::BadCodon error.
     See Also: NA
 
 =head2 DESTROY
