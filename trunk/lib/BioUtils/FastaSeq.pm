@@ -9,10 +9,23 @@ use List::MoreUtils qw(any);
 use Readonly;
 use Scalar::Util qw(looks_like_number);
 use MyX::Generic 0.0.1;
+use BioUtils::MyX::Fasta;
 use version; our $VERSION = qv('1.0.11');
 
 {
     Readonly my $NEW_USAGE => q{ new( {header =>, seq => } ) };
+    Readonly::Hash my %CODON_TBL => ('TCA'=>'S','TCC'=>'S','TCG'=>'S',
+        'TCT'=>'S','TTC'=>'F','TTT'=>'F','TTA'=>'L','TTG'=>'L','TAC'=>'Y',
+        'TAT'=>'Y','TAA'=>'_','TAG'=>'_','TGC'=>'C','TGT'=>'C','TGA'=>'_',
+        'TGG'=>'W','CTA'=>'L','CTC'=>'L','CTG'=>'L','CTT'=>'L','CCA'=>'P',
+        'CCC'=>'P','CCG'=>'P','CCT'=>'P','CAC'=>'H','CAT'=>'H','CAA'=>'Q',
+        'CAG'=>'Q','CGA'=>'R','CGC'=>'R','CGG'=>'R','CGT'=>'R','ATA'=>'I',
+        'ATC'=>'I','ATT'=>'I','ATG'=>'M','ACA'=>'T','ACC'=>'T','ACG'=>'T',
+        'ACT'=>'T','AAC'=>'N','AAT'=>'N','AAA'=>'K','AAG'=>'K','AGC'=>'S',
+        'AGT'=>'S','AGA'=>'R','AGG'=>'R','GTA'=>'V','GTC'=>'V','GTG'=>'V',
+        'GTT'=>'V','GCA'=>'A','GCC'=>'A','GCG'=>'A','GCT'=>'A','GAC'=>'D',
+        'GAT'=>'D','GAA'=>'E','GAG'=>'E','GGA'=>'G','GGC'=>'G','GGG'=>'G',
+        'GGT'=>'G');
     
     # Class Attributes
     my %header_of;
@@ -273,6 +286,40 @@ use version; our $VERSION = qv('1.0.11');
         my $str = $self->get_seq();
         $str =~ tr/ACGTacgt/TGCAtgca/;
         $self->set_seq($str);
+        
+        return 1;
+    }
+    
+    sub translate {
+        my ($self) = @_;
+        
+        my $str = $self->get_seq();
+        my $len = length $str;
+        my $aa_str = "";
+        my $aa;
+        my $codon;
+        
+        # make sure this sequence is divisible by 3.  Only send a warning if it
+        # is not
+        if ( $len % 3 != 0 ) {
+            warn "Seq (" . $self->get_id() . ") is not divisible by 3.  Trailing bases are ignored."
+        }
+        
+        for ( my $i = 0; $i < $len-2; $i = $i + 3 ) {
+            $codon = CORE::substr $str, $i, 3;
+            
+            if ( $aa = $CODON_TBL{$codon} ) {
+                $aa_str .= $aa;
+            }
+            else {
+                BioUtils::MyX::Fasta::BadCodon->throw(
+                    error => "Bad codon",
+                    codon => $aa
+                )
+            }
+        }
+        
+        $self->set_seq($aa_str);
         
         return 1;
     }
