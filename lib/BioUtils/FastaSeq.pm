@@ -43,6 +43,7 @@ use version; our $VERSION = qv('1.0.11');
     sub rev;
     sub comp;
     sub rev_comp;
+    sub translate;
     
     # Private Class Methods
 
