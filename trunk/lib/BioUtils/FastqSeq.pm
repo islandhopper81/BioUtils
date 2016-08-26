@@ -40,6 +40,7 @@ use version; our $VERSION = qv('1.0.11');
     sub rev_comp;
     sub rev;
     sub comp;
+    sub translate;
     
     # Private Class Methods
     sub _dec_to_encoding;
@@ -356,6 +357,15 @@ use version; our $VERSION = qv('1.0.11');
         return 1;
     }
     
+    sub translate {
+        my ($self) = @_;
+        
+        my $fasta_seq = $self->to_FastaSeq();
+        $fasta_seq->translate();
+        
+        return($fasta_seq);
+    }
+    
     sub _dec_to_encoding {
         my ($dec)  = @_;
         
@@ -453,6 +463,9 @@ This documentation refers to FastqSeq version 1.0.11.
     # reverse complement the sequence
     $fastq_seq->rev_comp();
     
+    # get the translated sequence -- returns BioUtils::FastaSeq obj
+    my $translated_fasta_seq = $fastq_seq->translate();
+    
 
 =head1 DESCRIPTION
 
@@ -489,6 +502,7 @@ values can be accessed as a string or array reference.
     rev
     comp
     rev_comp
+    translate
     _dec_to_encode
     _encode_to_dec
     DESTROY
@@ -705,6 +719,17 @@ values can be accessed as a string or array reference.
     Throws: NA
     Comments: NA
     See Also: NA
+    
+=head2 translate
+    
+    Title: translate
+    Usage: my $translated_fasta_seq = $my_fastq_seq->translate();
+    Function: Translate the nucleotide sequence
+    Returns: BioUtils::FastaSeq object
+    Args: NA
+    Throws: NA
+    Comments: NA
+    See Also: BioUtils::FastaSeq->translate()
     
 =head2 _dec_to_encoding
     
