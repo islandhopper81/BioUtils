@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 use BioUtils::FastqSeq;
-use Test::More tests => 91;
+use Test::More tests => 93;
 use Test::Exception;
 
 BEGIN { use_ok( 'BioUtils::FastqSeq' ); }
@@ -350,4 +350,24 @@ is( BioUtils::FastqSeq::_dec_to_encoding(0), '!', "_dec_to_encoding(0)" );
        "rev_comp() - get_quals_str" );
 }
 
-
+# test the translate method
+{
+    my $header = "seq1";
+    my $seq = "ATCGATCGA";
+    my $qual = "AAAABBBBB";
+    my $translation = "IDR";
+    my $new_seq_obj;
+    
+    my $seq_obj = BioUtils::FastqSeq->new({
+        header => $header,
+        seq => $seq,
+        quals_str => $qual,
+    });
+    
+    # test if the above sequence runs without errors
+    lives_ok( sub{ $new_seq_obj = $seq_obj->translate() },
+              "translate() - lives" );
+    
+    # make sure it go the right answer
+    is( $new_seq_obj->get_seq(), $translation, "translate() - get_seq" );
+}
