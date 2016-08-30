@@ -12,7 +12,7 @@ use Carp qw(carp croak);
 use File::Temp qw(tempfile);
 use Chart::Graph::Gnuplot qw(gnuplot);
 use BioUtils::FastqIO 1.2.0;
-use MyX::Generic 1.2.0;
+use MyX::Generic 0.0.1;
 use version; our $VERSION = qv('1.2.0');
 
 

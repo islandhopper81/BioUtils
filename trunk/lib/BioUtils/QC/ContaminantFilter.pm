@@ -6,7 +6,7 @@ use Carp qw(carp croak);
 use Class::Std::Utils;
 use Readonly;
 use List::MoreUtils qw(any);
-use MyX::Generic 1.2.0;
+use MyX::Generic 0.0.1;
 use BioUtils::FastaSeq 1.2.0;
 use BioUtils::FastaIO 1.2.0;
 use File::Temp qw(tempfile);

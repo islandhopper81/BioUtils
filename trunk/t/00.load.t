@@ -1,4 +1,4 @@
-use Test::More tests => 19;
+use Test::More tests => 20;
 
 BEGIN {
 use_ok( 'BioUtils::Align::FastaSeq');
@@ -20,6 +20,7 @@ use_ok( 'BioUtils::QC::FastqFilter' );
 use_ok( 'BioUtils::QC::ContaminantFilter' );
 use_ok( 'BioUtils::SeqSet::Diagnostics' );
 use_ok( 'BioUtils::FileReformat::GbkToGff' );
+use_ok( 'BioUtils::FileReformat::GffToFas' );
 }
 
 diag( "\n" );
@@ -42,3 +43,4 @@ diag( "Testing BioUtils::QC::FastqFilter $BioUtils::QC::FastqFilter::VERSION" );
 diag( "Testing BioUtils::QC::ContaminantFilter $BioUtils::QC::ContaminantFilter::VERSION" );
 diag( "Testing BioUtils::SeqSet::Diagnostics $BioUtils::SeqSet::Diagnostics::VERSION" );
 diag( "Testing BioUtils::FileReformat::GbkToGff $BioUtils::FileReformat::GbkToGff::VERSION" );
+diag( "Testing BioUtils::FileReformat::GffToFas $BioUtils::FileReformat::GffToFas::VERSION" );

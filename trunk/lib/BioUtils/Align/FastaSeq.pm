@@ -8,7 +8,7 @@ use Class::Std::Utils;
 use List::MoreUtils qw(any);
 use Readonly;
 use Carp qw(croak);
-use MyX::Generic 1.2.0;
+use MyX::Generic 0.0.1;
 use version; our $VERSION = qv('1.2.0');
 
 use BioUtils::FastaSeq;

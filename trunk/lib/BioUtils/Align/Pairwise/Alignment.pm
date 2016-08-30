@@ -10,7 +10,7 @@ use Readonly;
 use Carp qw(carp croak);
 use Scalar::Util qw(looks_like_number);
 
-use MyX::Generic 1.2.0;
+use MyX::Generic 0.0.1;
 
 
 {
