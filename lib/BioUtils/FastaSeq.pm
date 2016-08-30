@@ -314,11 +314,14 @@ use version; our $VERSION = qv('1.0.11');
             }
             else {
                 BioUtils::MyX::Fasta::BadCodon->throw(
-                    error => "Bad codon",
-                    codon => $aa
+                    error => "Bad codon: $codon",
+                    codon => $codon
                 )
             }
         }
+        
+        # remove any trailing stop codon symbols (ie "_")
+        $aa_str =~ s/_$//;
         
         $self->set_seq($aa_str);
         
