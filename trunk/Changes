@@ -1,6 +1,8 @@
 Revision history for BioUtils
 
 1.0.11	Under development
+    - added GFF to Fasta conversion library (FileReformat::GffToFas)
+    - added translation function to FastaSeq and FastqSeq
 	- added substr function to FastaSeq and FastqSeq
 	- moved MyX::Generic to it's own Perl library
 	- added object for reformatting Genbank to GFF3 files
