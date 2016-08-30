@@ -891,10 +891,10 @@ None reported.
 	Comments: Default is set to "nucl"
 	See Also: NA
 	
-=head2 get_print_exon
+=head2 get_print_exons
 
-	Title: get_print_exon
-	Usage: $GffToFas_obj->get_print_exon()
+	Title: get_print_exons
+	Usage: $GffToFas_obj->get_print_exons()
 	Function: Returns the boolean value for if exons should be printed
 	Returns: bool
 	Args: NA
