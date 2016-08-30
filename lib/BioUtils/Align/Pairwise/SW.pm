@@ -3,7 +3,7 @@ package BioUtils::Align::Pairwise::SW;
 use warnings;
 use strict;
 
-use version; our $VERSION = qv('1.0.11');
+use version; our $VERSION = qv('1.2.0');
 use Class::Std::Utils;
 use List::MoreUtils qw(any);
 use Readonly;
@@ -14,7 +14,7 @@ use BioUtils::Align::Pairwise::Alignment;
 use BioUtils::Align::Pairwise;
 use base qw(BioUtils::Align::Pairwise);
 
-use MyX::Generic 1.0.11;
+use MyX::Generic 1.2.0;
 
 
 {
@@ -228,7 +228,7 @@ BioUtils::Align::Pairwise::SW - A module for running Smith-Waterman
 
 =head1 VERSION
 
-This document describes BioUtils::Align::Pairwise::SW version 1.0.11
+This document describes BioUtils::Align::Pairwise::SW version 1.2.0
 
 
 =head1 SYNOPSIS
@@ -271,7 +271,7 @@ on inherited methods.
 	BioUtils::Align::FastaSeq
 	BioUtils::Align::Pairwise::Alignment
 	BioUtils::Align::Pairwise
-	MyX::Generic 1.0.11
+	MyX::Generic 1.2.0
 
 
 =head1 INCOMPATIBILITIES

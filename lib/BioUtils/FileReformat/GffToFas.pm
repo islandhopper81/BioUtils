@@ -7,7 +7,7 @@ use Log::Log4perl qw(:easy);
 use Readonly;
 use Class::Std::Utils;
 use List::MoreUtils qw(any);
-use version; our $VERSION = qv('1.0.11');
+use version; our $VERSION = qv('1.2.0');
 use MyX::Generic;
 use Bio::SeqIO;
 use BioUtils::FastaIO;
@@ -660,7 +660,7 @@ BioUtils::FileReformat::GffToFas - Converts GFF to fas file
 
 =head1 VERSION
 
-This document describes BioUtils::FileReformat::GffToFas version 1.0.11
+This document describes BioUtils::FileReformat::GffToFas version 1.2.0
 
 
 =head1 SYNOPSIS

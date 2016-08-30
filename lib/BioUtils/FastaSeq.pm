@@ -10,7 +10,7 @@ use Readonly;
 use Scalar::Util qw(looks_like_number);
 use MyX::Generic 0.0.1;
 use BioUtils::MyX::Fasta;
-use version; our $VERSION = qv('1.0.11');
+use version; our $VERSION = qv('1.2.0');
 
 {
     Readonly my $NEW_USAGE => q{ new( {header =>, seq => } ) };
@@ -347,7 +347,7 @@ BioUtils::FastaSeq - A data structure for sequences
 
 =head1 VERSION
 
-This document describes BioUtils::FastaSeq version 1.0.11
+This document describes BioUtils::FastaSeq version 1.2.0
 
 
 =head1 SYNOPSIS
@@ -437,9 +437,9 @@ BioUtils::FastaSeq requires no configuration files or environment variables.
     List::MoreUtils qw(any)
     Readonly
     Scalar::Util qw(looks_like_number)
-    MyX::Generic 1.0.11
+    MyX::Generic 1.2.0
     BioUtils::MyX::Fasta
-    version our $VERSION = qv('1.0.11')
+    version our $VERSION = qv('1.2.0')
 
 
 =head1 INCOMPATIBILITIES

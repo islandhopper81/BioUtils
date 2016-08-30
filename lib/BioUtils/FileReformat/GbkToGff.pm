@@ -7,7 +7,7 @@ use Log::Log4perl qw(:easy);
 use Readonly;
 use Class::Std::Utils;
 use List::MoreUtils qw(any);
-use version; our $VERSION = qv('1.0.11');
+use version; our $VERSION = qv('1.2.0');
 use MyX::Generic;
 use Bio::SeqIO;
 use Bio::Tools::GFF;
@@ -182,7 +182,7 @@ BioUtils::FileReformat::GbkToGff - Converts Genbank to GFF
 
 =head1 VERSION
 
-This document describes BioUtils::FileReformat::GbkToGff version 1.0.11
+This document describes BioUtils::FileReformat::GbkToGff version 1.2.0
 
 
 =head1 SYNOPSIS

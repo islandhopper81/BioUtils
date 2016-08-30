@@ -1,4 +1,4 @@
-BioUtils version 1.0.11
+BioUtils version 1.2.0
 
 A library of perl modules and scripts for doing basic DNA sequence operations.
 
@@ -39,6 +39,8 @@ File::Basename
 Getopt::Long
 IPC::Cmd
 List::MoreUtils
+Log::Log4perl
+MyX::Generic
 Pod::Usage
 Readonly
 Scalar::Util
