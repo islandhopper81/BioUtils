@@ -9,9 +9,9 @@ use Readonly;
 use Carp qw(croak);
 use Scalar::Util qw(openhandle);
 use MyX::Generic 0.0.1;
-use BioUtils::FastaSeq 1.0.11;
+use BioUtils::FastaSeq 1.2.0;
 
-use version; our $VERSION = qv('1.0.11');
+use version; our $VERSION = qv('1.2.0');
 
 
 {
@@ -178,7 +178,7 @@ BioUtils::FastaSeq objects
 
 =head1 VERSION
 
-This document describes BioUtils::FastaIO version 1.0.11
+This document describes BioUtils::FastaIO version 1.2.0
 
 
 =head1 SYNOPSIS

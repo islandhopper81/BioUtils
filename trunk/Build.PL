@@ -26,6 +26,7 @@ my $builder = Module::Build->new(
 		'Getopt::Long' => 0,
         'IPC::Cmd' => 0,
 		'List::MoreUtils' => 0,
+	    'MyX::Generic' => 0,
 		'Pod::Usage' => 0,
 		'Readonly' => 0,
 		'Scalar::Util' => 0,

@@ -39,7 +39,7 @@ when working with ConsensusBuilder objects.
 
 =head1 VERSION
 
-This documentation refers to BioUtils::MyX::ConsensusBuilder version 1.0.11.
+This documentation refers to BioUtils::MyX::ConsensusBuilder version 1.2.0.
 
 =head1 Included Modules
 
@@ -52,7 +52,7 @@ This documentation refers to BioUtils::MyX::ConsensusBuilder version 1.0.11.
 =head1 SYNOPSIS
 
     # Throw a Fastq exception
-    use BioUtils::MyX::ConsensusBuilder 1.0.11;
+    use BioUtils::MyX::ConsensusBuilder 1.2.0;
     if ( ... ) {   # Some code looking for an error
         BioUtils::MyX::ConsensusBuilder->throw(
             error => 'A ConsesusBuilder exception'

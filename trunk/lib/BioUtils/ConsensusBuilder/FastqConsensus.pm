@@ -8,8 +8,8 @@ use Carp;
 use Readonly;
 use List::MoreUtils qw(any);
 use Scalar::Util qw(looks_like_number);
-use version; our $VERSION = qv('1.0.11');
-use BioUtils::FastqSeq 1.0.11;
+use version; our $VERSION = qv('1.2.0');
+use BioUtils::FastqSeq 1.2.0;
 use base qw(BioUtils::FastqSeq);  # inherits from FastqSeq
 
 {
@@ -112,7 +112,7 @@ to avoid confusion
 
 =head1 VERSION
 
-This documentation refers to FastqConsensus version 1.0.11.
+This documentation refers to FastqConsensus version 1.2.0.
 
 =head1 Included Modules
 

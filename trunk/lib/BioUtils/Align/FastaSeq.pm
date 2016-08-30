@@ -8,8 +8,8 @@ use Class::Std::Utils;
 use List::MoreUtils qw(any);
 use Readonly;
 use Carp qw(croak);
-use MyX::Generic 1.0.11;
-use version; our $VERSION = qv('1.0.11');
+use MyX::Generic 1.2.0;
+use version; our $VERSION = qv('1.2.0');
 
 use BioUtils::FastaSeq;
 use base qw(BioUtils::FastaSeq);
@@ -115,7 +115,7 @@ BioUtils::Align::FastaSeq - A data structure to holding an aligned fasta seq
 
 =head1 VERSION
 
-This document describes BioUtils::Align::FastaSeq version 1.0.11
+This document describes BioUtils::Align::FastaSeq version 1.2.0
 
 
 =head1 SYNOPSIS
@@ -155,7 +155,7 @@ of the sequence with repsect to the original sequence.
 	Readonly
 	Carp qw(carp croak)
 	Scalar::Util qw(looks_like_number)
-	MyX::Generic 1.0.11
+	MyX::Generic 1.2.0
     
     BioUtils::FastaSeq
 

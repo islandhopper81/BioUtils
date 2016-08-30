@@ -1,5 +1,5 @@
 
-use BioUtils::QC::ContaminantFilter 1.0.11;
+use BioUtils::QC::ContaminantFilter 1.2.0;
 use Test::More tests => 55;
 use Test::Exception;
 use File::Temp qw(tempfile tempdir);
