@@ -17,7 +17,7 @@ use Cwd;
 use File::Basename;
 use BioUtils::FastqIO 1.2.0;
 use BioUtils::Codec::QualityScores qw(illumina_1_8_to_int);
-use MyX::Generic;
+use MyX::Generic 0.0.1;
 
 
 {

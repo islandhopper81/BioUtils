@@ -14,7 +14,7 @@ use BioUtils::Align::Pairwise::Alignment;
 use BioUtils::Align::Pairwise;
 use base qw(BioUtils::Align::Pairwise);
 
-use MyX::Generic 1.2.0;
+use MyX::Generic 0.0.1;
 
 
 {

@@ -4,7 +4,7 @@ use warnings;
 use strict;
 use Readonly;
 use Class::Std::Utils;
-use MyX::Generic 1.2.0;
+use MyX::Generic 0.0.1;
 use Exporter qw( import );
 our @EXPORT_OK = qw( nuc_str_to_iupac iupac_to_nuc_str );
 use version; our $VERSION = qv('1.2.0');
