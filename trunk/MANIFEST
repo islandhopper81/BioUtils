@@ -20,10 +20,12 @@ lib/BioUtils/FastqIO.pm
 lib/BioUtils/FastqSeq.pm
 lib/BioUtils/QC/FastqFilter.pm
 lib/BioUtils/QC/ContaminantFilter.pm
+lib/BioUtils/MyX/Fasta.pm
 lib/BioUtils/MyX/Fastq.pm
 lib/BioUtils/MyX/ConsensusBuilder.pm
 lib/BioUtils/SeqSet/Diagnostics.pm
 lib/BioUtils/FileReformat/GbkToGff.pm
+lib/BioUtils/FileReformat/GffToFas.pm
 bin/fastq_filter.pl
 bin/filter_contaminants.pl
 bin/reverse_complement.pl
@@ -50,5 +52,6 @@ t/QC/FastqFilter.t
 t/QC/ContaminantFilter.t
 t/SeqSet/Diagnostics.t
 t/FileReformat/GbkToGff.t
+t/FileReformat/GffToFas.t
 META.yml
 META.json
