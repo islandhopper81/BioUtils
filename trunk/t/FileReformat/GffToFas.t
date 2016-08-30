@@ -236,7 +236,7 @@ my $obj = undef;
     # test when it should work
     @arr = ($seq1, $seq2);
     lives_ok( sub { $prot_seq = $obj->_get_gene_seq(\@arr) }, "_get_gene_seq() - expected to live");
-    is( $prot_seq->get_seq(), "IG_", "_get_gene_seq() - IG" );
+    is( $prot_seq->get_seq(), "IG", "_get_gene_seq() - IG" );
 }
 
 # test the _init method
