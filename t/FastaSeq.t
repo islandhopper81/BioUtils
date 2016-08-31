@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 use BioUtils::FastaSeq;
-use Test::More tests => 62;
+use Test::More tests => 66;
 use Test::Exception;
 use Test::Warn;
 
@@ -278,6 +278,18 @@ throws_ok( sub { $fasta_seq->get_id() }, qr/Undefined header/, "get_id() - caugh
     throws_ok( sub{ $seq_obj->translate() },
               qr/Bad codon/,
               "translate() - throws bad codon" );
+    
+    # check what happens when there are lower case characters
+    $seq_obj->set_seq("Atc");
+    lives_ok( sub{ $seq_obj->translate() },
+              "translate() - lives" );
+    is( $seq_obj->get_seq(), "I", "Lower case ok");
+    
+    # check what happens when there is an unknown base (ie N)
+    $seq_obj->set_seq("ATN");
+    lives_ok( sub{ $seq_obj->translate() },
+             "translate() - lives" );
+    is( $seq_obj->get_seq(), "X", "N to X" );
 }
 
 

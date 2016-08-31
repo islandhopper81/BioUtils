@@ -375,11 +375,6 @@ my $logger = get_logger();
 			
 			if ( $self->get_print_exons() ) {
 				foreach $seq_obj ( @{$seqs_by_id_href->{$id}} ) {
-					
-					if ( $self->get_fasta_type() eq "prot" ) {
-						$seq_obj->translate();
-					}
-					
 					$logger->debug("Writting seq");
 					$fasta_out->write_seq($seq_obj);
 				}
@@ -388,10 +383,6 @@ my $logger = get_logger();
 				# print the genes.  This means combining sequences with
 				# the same ID (ie multiple exons in the same gene)
 				$seq_obj = _get_gene_seq($self, $seqs_by_id_href->{$id});
-				
-				if ( $self->get_fasta_type() eq "prot" ) {
-					$seq_obj->translate();
-				}
 				
 				$logger->debug("Writting seq");
 				$fasta_out->write_seq($seq_obj);

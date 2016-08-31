@@ -308,9 +308,14 @@ use version; our $VERSION = qv('1.2.0');
         
         for ( my $i = 0; $i < $len-2; $i = $i + 3 ) {
             $codon = CORE::substr $str, $i, 3;
+            $codon = uc $codon;
             
             if ( $aa = $CODON_TBL{$codon} ) {
                 $aa_str .= $aa;
+            }
+            elsif ( $codon =~ m/N/g ) {
+                # Any codon that has an N is an unknown codon
+                $aa_str .= 'X';
             }
             else {
                 BioUtils::MyX::Fasta::BadCodon->throw(
@@ -609,7 +614,9 @@ BioUtils::FastaSeq requires no configuration files or environment variables.
               bases.  Those trailing bases are ignored (ie dropped, ie not
               translated).  This function also assumes the sequence is a
               nucleotide sequence.  If it is not you will likely throw a
-              BioUtils::MyX::Fasta::BadCodon error.
+              BioUtils::MyX::Fasta::BadCodon error.  Any trailing stop codon
+              values are removed.  So if your protein is "AIN_" the "_"
+              character is automatically removed.
     See Also: NA
 
 =head2 DESTROY
