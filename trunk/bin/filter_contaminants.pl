@@ -8,11 +8,11 @@
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('1.2.0');
+use version; our $VERSION = qv('1.2.1');
 
-use BioUtils::QC::ContaminantFilter 1.2.0;
-use BioUtils::FastqIO 1.2.0;
-use BioUtils::FastaIO 1.2.0;
+use BioUtils::QC::ContaminantFilter 1.2.1;
+use BioUtils::FastqIO 1.2.1;
+use BioUtils::FastaIO 1.2.1;
 use Getopt::Long;
 use Config::Std;
 use Pod::Usage;
@@ -185,7 +185,7 @@ filter_contaminants.pl - Filters out contaminant sequences using blastn
 
 =head1 VERSION
 
-This documentation refers to filter_contaminants.pl version 1.2.0
+This documentation refers to filter_contaminants.pl version 1.2.1
 
 
 =head1 SYNOPSIS
@@ -360,7 +360,7 @@ from which contaminant OTUs will be seperated from non-contaminant OTUs.
     
 =head1 DEPENDANCIES
 
-    BioUtils::QC::ContaminantFilter 1.2.0
+    BioUtils::QC::ContaminantFilter 1.2.1
     Getopt::Long
     Config::Std
     Pod::Usage
