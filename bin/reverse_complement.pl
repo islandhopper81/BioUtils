@@ -30,8 +30,14 @@ my $options_okay = GetOptions (
 if ( $help ) { pod2usage(2) }
 if ( ! defined $str and ! defined $file ) { pod2usage(2) }
 
+# if none of the flags are set automatically do a reverese and compliment
+if ( ! defined $rev_flag and ! defined $comp_flag ) {
+	$rev_flag = 1;
+	$comp_flag = 1;
+}
+
 # MAIN
-if ( -s $file ) {
+if ( defined $file and -s $file ) {
 	# create the bioUtils fasta file object
 	my $in = BioUtils::FastaIO->new({stream_type => '<', file => $file});
 	while ( my $seq = $in->get_next_seq() ) {
@@ -42,7 +48,7 @@ if ( -s $file ) {
 	}
 }
 else {
-	print _operations($str);
+	print _operations($str), "\n";
 }
 
 
