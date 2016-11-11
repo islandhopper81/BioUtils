@@ -1,5 +1,8 @@
 Revision history for BioUtils
 
+1.2.1	Development 
+	- fixed bugs in reverse_complement.pl
+
 1.2.0	Released Tues Aug 30, 2016
 
 1.0.11	Released as v1.2.0
