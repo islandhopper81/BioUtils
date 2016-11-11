@@ -26,7 +26,7 @@ with fasta sequences and corresponding objects.
 
 =head1 VERSION
 
-This documentation refers to BioUtils::MyX::Fasta version 1.2.0.
+This documentation refers to BioUtils::MyX::Fasta version 1.2.1.
 
 =head1 Included Modules
 
@@ -39,7 +39,7 @@ This documentation refers to BioUtils::MyX::Fasta version 1.2.0.
 =head1 SYNOPSIS
 
     # Throw a Fasta exception
-    use BioUtils::MyX::Fasta 1.2.0;
+    use BioUtils::MyX::Fasta 1.2.1;
     if ( ... ) {   # Some code looking for an error
         BioUtils::MyX::Fasta->throw(
             error => 'A fasta exception'

@@ -1,5 +1,5 @@
 
-use BioUtils::QC::FastqFilter 1.2.0;
+use BioUtils::QC::FastqFilter 1.2.1;
 use Test::More tests => 142;
 use Test::Exception;
 use Test::Warn;

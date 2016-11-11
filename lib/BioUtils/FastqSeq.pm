@@ -9,9 +9,9 @@ use Readonly;
 use Carp qw(croak);
 use Scalar::Util qw(looks_like_number);
 use MyX::Generic 0.0.1;
-use BioUtils::FastaSeq 1.2.0;
+use BioUtils::FastaSeq 1.2.1;
 
-use version; our $VERSION = qv('1.2.0');
+use version; our $VERSION = qv('1.2.1');
 
 {
     Readonly my $ASCII_OFFSET => 33;
@@ -404,7 +404,7 @@ FastqSeq - A data structure to store a sequence string and quality string
 
 =head1 VERSION
 
-This documentation refers to FastqSeq version 1.2.0.
+This documentation refers to FastqSeq version 1.2.1.
 
 =head1 Included Modules
 
@@ -413,8 +413,8 @@ This documentation refers to FastqSeq version 1.2.0.
     Readonly
     Carp qw(croak)
     Scalar::Util qw(looks_like_number)
-    MyX::Generic 1.2.0
-    BioUtils::FastaSeq 1.2.0
+    MyX::Generic 1.2.1
+    BioUtils::FastaSeq 1.2.1
 
 =head1 Inherit
 

@@ -3,7 +3,7 @@ package BioUtils::Align::Pairwise;
 use warnings;
 use strict;
 
-use version; our $VERSION = qv('1.2.0');
+use version; our $VERSION = qv('1.2.1');
 use Class::Std::Utils;
 use List::MoreUtils qw(any);
 use Readonly;
@@ -164,7 +164,7 @@ BioUtils::Align::Pairwise - An abstract parent module for SW and NW
 
 =head1 VERSION
 
-This document describes BioUtils::Align::Pairwise version 1.2.0
+This document describes BioUtils::Align::Pairwise version 1.2.1
 
 
 =head1 SYNOPSIS
@@ -186,7 +186,7 @@ An abstract parent module for SW and NW
 	Carp qw(carp croak)
 	Scalar::Util qw(looks_like_number)
 
-	MyX::Generic 1.2.0
+	MyX::Generic 1.2.1
 
 
 =head1 INCOMPATIBILITIES

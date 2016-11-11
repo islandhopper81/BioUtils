@@ -3,7 +3,7 @@ package BioUtils::Align::Pairwise::NW;
 use warnings;
 use strict;
 
-use version; our $VERSION = qv('1.2.0');
+use version; our $VERSION = qv('1.2.1');
 use Class::Std::Utils;
 use List::MoreUtils qw(any);
 use Readonly;
@@ -198,7 +198,7 @@ BioUtils::Align::Pairwise::NW - A module for running Needleman-Wunsch
 
 =head1 VERSION
 
-This document describes BioUtils::Align::Pairwise::NW version 1.2.0
+This document describes BioUtils::Align::Pairwise::NW version 1.2.1
 
 
 =head1 SYNOPSIS
@@ -241,7 +241,7 @@ inherited methods.
 	BioUtils::Align::FastaSeq
 	BioUtils::Align::Pairwise::Alignment
 	BioUtils::Align::Pairwise
-	MyX::Generic 1.2.0
+	MyX::Generic 1.2.1
 
 
 =head1 INCOMPATIBILITIES

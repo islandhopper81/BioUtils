@@ -7,11 +7,11 @@ use Class::Std::Utils;
 use Readonly;
 use List::MoreUtils qw(any);
 use MyX::Generic 0.0.1;
-use BioUtils::FastaSeq 1.2.0;
-use BioUtils::FastaIO 1.2.0;
+use BioUtils::FastaSeq 1.2.1;
+use BioUtils::FastaIO 1.2.1;
 use File::Temp qw(tempfile);
 use IPC::Cmd qw(can_run);
-use version; our $VERSION = qv('1.2.0');
+use version; our $VERSION = qv('1.2.1');
 
 {
     Readonly my $NEW_USAGE => q{ new( {params_file => } ) };
@@ -673,7 +673,7 @@ BioUtils::QC::ContaminantFilter - Identifies and removes sequence contaminants
 
 =head1 VERSION
 
-This document describes BioUtils::QC::ContaminantFilter version 1.2.0
+This document describes BioUtils::QC::ContaminantFilter version 1.2.1
 
 
 =head1 Included Modules
@@ -683,8 +683,8 @@ This document describes BioUtils::QC::ContaminantFilter version 1.2.0
     Readonly
     List::MoreUtils qw(any)
     MyX::Generic
-    BioUtils::FastaSeq 1.2.0
-    BioUtils::FastaIO 1.2.0
+    BioUtils::FastaSeq 1.2.1
+    BioUtils::FastaIO 1.2.1
     File::Temp qw(tempfile)
     IPC::Cmd qw(can_run)
     version
