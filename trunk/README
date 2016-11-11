@@ -34,8 +34,9 @@ Config::Std
 Data::Dumper
 Exception::Class
 Exporter
-File::Temp
 File::Basename
+File::Spec
+File::Temp
 Getopt::Long
 IPC::Cmd
 List::MoreUtils
