@@ -328,6 +328,15 @@ use version; our $VERSION = qv('1.2.1');
         # remove any trailing stop codon symbols (ie "_")
         $aa_str =~ s/_$//;
         
+        # make sure the first codon is M
+        # "Alternate start codons are still translated as Met when they are at
+        # the start of a protein (even if the codon encodes a different amino
+        # acid otherwise)"
+        # -- wikipedia "Start Codon"
+        if ( $aa_str !~ m/^M/ ) {
+            $aa_str =~ s/^./M/;
+        }
+        
         $self->set_seq($aa_str);
         
         return 1;
