@@ -9,18 +9,34 @@ use Getopt::Long;
 use Pod::Usage;
 use Carp;
 use BioUtils::FastaIO;
+use BioUtils::FastqIO;
+use File::Basename qw(fileparse);
 
 # Subroutines #
 sub my_reverse;
 sub my_complement;
 sub _operations;
+sub _guess_type;
 
 # Variables #
-my ($str, $file, $rev_flag, $comp_flag, $help);
+my ($str, $file, $type, $rev_flag, $comp_flag, $help);
+
+Readonly::Hash my %FA_TYPES => ('fasta' => 1,
+                             'FASTA' => 1,
+                             'fas' => 1,
+                             'FAS' => 1,
+                             'fa' => 1,
+                             'FA' => 1,);
+Readonly::Hash my %FQ_TYPES => ('fastq' => 1,
+                                'FASTQ' => 1,
+                                'fq' => 1,
+                                'FQ' => 1); 
+
 
 my $options_okay = GetOptions (
     "str:s" => \$str,
 	"file:s" => \$file,
+    "type:s" => \$type,
     "rev_flag" => \$rev_flag,
     "comp_flag" => \$comp_flag,
     "help" => \$help,                  # flag
@@ -38,13 +54,43 @@ if ( ! defined $rev_flag and ! defined $comp_flag ) {
 
 # MAIN
 if ( defined $file and -s $file ) {
+	# set the file type if not specified
+	if ( ! defined $type ) {
+		$type = _guess_type($file, \$type);
+	}
+	
 	# create the bioUtils fasta file object
-	my $in = BioUtils::FastaIO->new({stream_type => '<', file => $file});
+	my $in;
+	if ( defined $FA_TYPES{$type} ) {
+		# this is a fasta file
+		$in = BioUtils::FastaIO->new({stream_type => '<', file => $file});
+	}
+	elsif ( defined $FQ_TYPES{$type} ) {
+		# this is a fastq file
+		$in = BioUtils::FastqIO->new({stream_type => '<', file => $file});
+	}
+	else {
+		croak "Unrecognized file type: $type";
+	}
+
 	while ( my $seq = $in->get_next_seq() ) {
-		my $new_seq = _operations($seq->get_seq());
-		$seq->set_seq($new_seq);
-		print ">", $seq->get_header(), "\n";
-		print $seq->get_seq(), "\n";
+		# do the operations (ie reverse and/or complement)
+		my $new_seq = _seq_obj_operstaions($seq);
+		
+		# print the output to STDOUT
+		if ( defined $FA_TYPES{$type} ) {
+			print ">", $seq->get_header(), "\n";
+			print $seq->get_seq(), "\n";
+		}
+		elsif ( defined $FQ_TYPES{$type} ) {
+			print "@", $seq->get_header(), "\n";
+			print $seq->get_seq(), "\n";
+			print "+", "\n";
+			print $seq->get_quals_str(), "\n";
+		}
+		else {
+			croak "Unrecognized file type: $type";
+		}
 	}
 }
 else {
@@ -81,6 +127,42 @@ sub _operations {
 	return $new_str;
 }
 
+sub _seq_obj_operstaions {
+	my ($seq) = @_;
+	
+	my $new_seq = $seq;
+	
+	if ( $rev_flag and $comp_flag ) {
+		# both reverse and complement
+		$new_seq->rev_comp();
+	}
+	elsif ( $rev_flag ) {
+		$new_seq->rev();
+	}
+	elsif ( $comp_flag ) {
+		$new_seq = $seq->comp()
+	}
+	else {
+		warn "ERROR";
+	}
+	
+	return $new_seq;
+}
+
+sub _guess_type {
+    my ($fastx_file) = @_;
+
+    my @extensions = (keys %FA_TYPES, keys %FQ_TYPES);
+    my ($filename, $directories, $suffix) = fileparse($fastx_file, @extensions);
+
+    if ( ! defined $FA_TYPES{$suffix} and
+         ! defined $FQ_TYPES{$suffix} ) {
+        croak "Unrecognized file type: $suffix";
+    }
+
+    return $suffix;
+}
+
 sub my_reverse {
     my ($str) = @_;
     my $ans = scalar reverse $str;
@@ -108,7 +190,7 @@ reverse_complement.pl - Simple reverse complement for DNA
 
 =head1 VERSION
 
-This documentation refers to reverse_complement.pl version 0.0.1
+This documentation refers to reverse_complement.pl version 0.0.2
 
 
 =head1 SYNOPSIS
@@ -116,6 +198,7 @@ This documentation refers to reverse_complement.pl version 0.0.1
     reverse_complement.pl
 					--str ATGTA
 					[--file <file.fasta>]
+                    [--type fasta]
                     [--rev_flag]
                     [--comp_flag]
                     [--help]
@@ -137,6 +220,12 @@ DNA string to reverse complement
 
 Alternitively to inputing a DNA sequence directly this options allows users to
 pass a fasta file.  The resulting sequecnes will be printed to the screen.
+
+=head2 [--type fasta]
+
+The file type.  This can be either "fasta" or "fastq".  If no type if given the
+script will attempt to guess the type based on the file extension.  If that fails
+an error will be thrown.
     
 =head2 [--rev_flag]
 
@@ -153,7 +242,7 @@ An optional parameter to print a usage statement.
 
 =head1 DESCRIPTION
 
-Reverse complements a DNA string
+Reverse complements a DNA string, fasta file, or fastq file.
 
 
 =head1 CONFIGURATION AND ENVIRONMENT
@@ -166,7 +255,9 @@ No special configurations or environment variables needed
 Getopt::Long
 Pod::Usage
 Carp
-BioUtils::FASTAIO
+File::Basename qw(fileparse)
+BioUtils::FastaIO
+BioUtils::FastqIO
 
 
 =head1 AUTHOR

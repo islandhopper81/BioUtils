@@ -2,6 +2,7 @@ Revision history for BioUtils
 
 1.2.1	Development 
 	- fixed bugs in reverse_complement.pl
+	- added fastq file capabilities to reverse_complement.pl
 
 1.2.0	Released Tues Aug 30, 2016
 
