@@ -211,7 +211,7 @@ my $obj = undef;
     # set up two object to compare
     my $seq1 = BioUtils::FastaSeq->new({
         header => "695827 NA name='gm1.2_g' exonNumber=1  start=7917 end=8087 strand=+ contig=scaffold_1",
-        seq => "ATCG"
+        seq => "ATGG"
     });
     my $seq2 = BioUtils::FastaSeq->new({
         header => "695827 NA name='gm1.2_g' exonNumber=2  start=8123 end=8355 strand=+ contig=scaffold_1",
@@ -231,12 +231,12 @@ my $obj = undef;
     # test when there is not %3 bases
     @arr = ($seq1);
     warning_is { $prot_seq = $obj->_get_gene_seq(\@arr) } 'Seq (695827) is not divisible by 3.  Trailing bases are ignored.', "Trailing bases warning";
-    is( $prot_seq->get_seq(), "I", "_get_gene_seq() - prot = I");
+    is( $prot_seq->get_seq(), "M", "_get_gene_seq() - prot = M");
     
     # test when it should work
     @arr = ($seq1, $seq2);
     lives_ok( sub { $prot_seq = $obj->_get_gene_seq(\@arr) }, "_get_gene_seq() - expected to live");
-    is( $prot_seq->get_seq(), "IG", "_get_gene_seq() - IG" );
+    is( $prot_seq->get_seq(), "MG", "_get_gene_seq() - MG" );
 }
 
 # test the _init method

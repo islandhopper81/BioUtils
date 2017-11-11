@@ -10,6 +10,7 @@ use Readonly;
 use Scalar::Util qw(looks_like_number);
 use MyX::Generic 0.0.1;
 use BioUtils::MyX::Fasta;
+use UtilSY qw(:all);
 use version; our $VERSION = qv('1.2.1');
 
 {
@@ -292,7 +293,13 @@ use version; our $VERSION = qv('1.2.1');
     }
     
     sub translate {
-        my ($self) = @_;
+        my ($self, $is_gene) = @_;
+        
+        # set the default is_gene value to TRUE
+        if ( ! defined $is_gene ) {
+            $is_gene = 1; # TRUE
+        }
+        $is_gene = to_bool($is_gene);
         
         my $str = $self->get_seq();
         my $len = length $str;
@@ -333,7 +340,11 @@ use version; our $VERSION = qv('1.2.1');
         # the start of a protein (even if the codon encodes a different amino
         # acid otherwise)"
         # -- wikipedia "Start Codon"
-        if ( $aa_str !~ m/^M/ ) {
+        # There are two conditions in which the first codon is M:
+        # 1. if it starts with an unknown codon (ie the codon has an N in it)
+        # 2. if the caller specifies the sequence is not a gene using the
+        #    is_gene parameter
+        if ( $aa_str !~ m/^M|X/ and $is_gene ) {
             $aa_str =~ s/^./M/;
         }
         
@@ -454,6 +465,7 @@ BioUtils::FastaSeq requires no configuration files or environment variables.
     MyX::Generic 1.2.1
     BioUtils::MyX::Fasta
     version our $VERSION = qv('1.2.1')
+    UstilSY qw(:all)
 
 
 =head1 INCOMPATIBILITIES
@@ -613,10 +625,10 @@ BioUtils::FastaSeq requires no configuration files or environment variables.
 =head2 translate
     
     Title: translate
-    Usage: $my_fasta_seq->translate();
+    Usage: $my_fasta_seq->translate(is_gene);
     Function: Translates a nucleotide sequence to amino acids
     Returns: 1 on successful completion
-    Args: NA
+    Args: -is_gene => boolean specifing if sequence is a gene (DEFAULT: T)
     Throws: BioUtils::MyX::Fasta::BadCodon
     Comments: This assumes the nucleotide sequence stored in this object is
               alread in frame.  It also throws a warning if there are trailing
@@ -626,6 +638,15 @@ BioUtils::FastaSeq requires no configuration files or environment variables.
               BioUtils::MyX::Fasta::BadCodon error.  Any trailing stop codon
               values are removed.  So if your protein is "AIN_" the "_"
               character is automatically removed.
+              
+              "Alternate start codons are still translated as Met when they are
+              at the start of a protein (even if the codon encodes a different
+              amino acid otherwise)"
+              -- wikipedia "Start Codon"
+              
+              To get the amino acid sequence without changing the first codon to
+              "M" (ie without assuming th sequence is a gene) set the "is_gene"
+              parameter to "F".
     See Also: NA
 
 =head2 DESTROY

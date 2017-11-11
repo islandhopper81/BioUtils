@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 use BioUtils::FastaSeq;
-use Test::More tests => 66;
+use Test::More tests => 69;
 use Test::Exception;
 use Test::Warn;
 
@@ -258,7 +258,12 @@ throws_ok( sub { $fasta_seq->get_id() }, qr/Undefined header/, "get_id() - caugh
         header => $header,
         seq => $seq,
     });
-    my $translation = "IDR";
+    my $translation = "MDR";
+    
+    # check for the errors when passing in a bad parameter for is_gene
+    throws_ok( sub{ $seq_obj->translate("blah") },
+               "MyX::Generic::BadValue",
+               "translate(blah) - throws bad value" );
     
     # test if the above sequence runs without errors
     lives_ok( sub{ $seq_obj->translate() },
@@ -280,16 +285,22 @@ throws_ok( sub { $fasta_seq->get_id() }, qr/Undefined header/, "get_id() - caugh
               "translate() - throws bad codon" );
     
     # check what happens when there are lower case characters
-    $seq_obj->set_seq("Atc");
+    $seq_obj->set_seq("Atg");
     lives_ok( sub{ $seq_obj->translate() },
               "translate() - lives" );
-    is( $seq_obj->get_seq(), "I", "Lower case ok");
+    is( $seq_obj->get_seq(), "M", "Lower case ok");
     
     # check what happens when there is an unknown base (ie N)
     $seq_obj->set_seq("ATN");
     lives_ok( sub{ $seq_obj->translate() },
              "translate() - lives" );
     is( $seq_obj->get_seq(), "X", "N to X" );
+    
+    # check what happens when I specify that the sequence is not a gene
+    $seq_obj->set_seq("ATC");
+    lives_ok( sub{ $seq_obj->translate("F") },
+              "translate(F) - lives" );
+    is( $seq_obj->get_seq(), "I", "setting is_gene to false");
 }
 
 

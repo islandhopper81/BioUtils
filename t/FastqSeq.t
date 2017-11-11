@@ -353,9 +353,9 @@ is( BioUtils::FastqSeq::_dec_to_encoding(0), '!', "_dec_to_encoding(0)" );
 # test the translate method
 {
     my $header = "seq1";
-    my $seq = "ATCGATCGA";
+    my $seq = "ATGGATCGA";
     my $qual = "AAAABBBBB";
-    my $translation = "IDR";
+    my $translation = "MDR";
     my $new_seq_obj;
     
     my $seq_obj = BioUtils::FastqSeq->new({

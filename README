@@ -52,6 +52,8 @@ Test::Pod
 Test::Pod::Coverage
 Test::Warn
 version
+UtilSY
+MyX
 
 
 LICENCE AND COPYRIGHT
