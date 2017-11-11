@@ -1,0 +1,154 @@
+{
+   "abstract" : "A data structure for sequences",
+   "author" : [
+      "Scott Yourstone <scott.yourstone81@gmail.com>"
+   ],
+   "dynamic_config" : 0,
+   "generated_by" : "Module::Build version 0.422",
+   "license" : [
+      "perl_5"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : "2"
+   },
+   "name" : "BioUtils",
+   "prereqs" : {
+      "build" : {
+         "requires" : {
+            "Bio::SeqIO" : "0",
+            "Bio::Tools::GFF" : "0",
+            "Carp" : "0",
+            "Chart::Graph::Gnuplot" : "0",
+            "Class::Std::Utils" : "0",
+            "Config::Std" : "0",
+            "Data::Dumper" : "0",
+            "Exception::Class" : "0",
+            "Exporter" : "0",
+            "File::Basename" : "0",
+            "File::Spec" : "0",
+            "File::Temp" : "0",
+            "Getopt::Long" : "0",
+            "IPC::Cmd" : "0",
+            "List::MoreUtils" : "0",
+            "Log::Log4perl" : "0",
+            "MyX::Generic" : "0",
+            "Pod::Usage" : "0",
+            "Readonly" : "0",
+            "Scalar::Util" : "0",
+            "Statistics::Descriptive" : "0",
+            "Test::Exception" : "0",
+            "Test::More" : "0",
+            "Test::Pod" : "0",
+            "Test::Pod::Coverage" : "0",
+            "Test::Warn" : "0",
+            "version" : "0"
+         }
+      },
+      "runtime" : {
+         "requires" : {
+            "Test::More" : "0",
+            "version" : "0"
+         }
+      }
+   },
+   "provides" : {
+      "BioUtils::Align::FastaSeq" : {
+         "file" : "lib/BioUtils/Align/FastaSeq.pm",
+         "version" : "v1.2.1"
+      },
+      "BioUtils::Align::Pairwise" : {
+         "file" : "lib/BioUtils/Align/Pairwise.pm",
+         "version" : "v1.2.1"
+      },
+      "BioUtils::Align::Pairwise::Alignment" : {
+         "file" : "lib/BioUtils/Align/Pairwise/Alignment.pm",
+         "version" : "v1.2.1"
+      },
+      "BioUtils::Align::Pairwise::NW" : {
+         "file" : "lib/BioUtils/Align/Pairwise/NW.pm",
+         "version" : "v1.2.1"
+      },
+      "BioUtils::Align::Pairwise::SW" : {
+         "file" : "lib/BioUtils/Align/Pairwise/SW.pm",
+         "version" : "v1.2.1"
+      },
+      "BioUtils::Codec::IUPAC" : {
+         "file" : "lib/BioUtils/Codec/IUPAC.pm",
+         "version" : "v1.2.1"
+      },
+      "BioUtils::Codec::QualityScores" : {
+         "file" : "lib/BioUtils/Codec/QualityScores.pm",
+         "version" : "v1.2.1"
+      },
+      "BioUtils::ConsensusBuilder::ConsensusBuilder" : {
+         "file" : "lib/BioUtils/ConsensusBuilder/ConsensusBuilder.pm",
+         "version" : "v1.2.1"
+      },
+      "BioUtils::ConsensusBuilder::FastqColumn" : {
+         "file" : "lib/BioUtils/ConsensusBuilder/FastqColumn.pm",
+         "version" : "v1.2.1"
+      },
+      "BioUtils::ConsensusBuilder::FastqConsensus" : {
+         "file" : "lib/BioUtils/ConsensusBuilder/FastqConsensus.pm",
+         "version" : "v1.2.1"
+      },
+      "BioUtils::Entropy::Shannon" : {
+         "file" : "lib/BioUtils/Entropy/Shannon.pm",
+         "version" : "v1.2.1"
+      },
+      "BioUtils::FastaIO" : {
+         "file" : "lib/BioUtils/FastaIO.pm",
+         "version" : "v1.2.1"
+      },
+      "BioUtils::FastaSeq" : {
+         "file" : "lib/BioUtils/FastaSeq.pm",
+         "version" : "v1.2.1"
+      },
+      "BioUtils::FastqIO" : {
+         "file" : "lib/BioUtils/FastqIO.pm",
+         "version" : "v1.2.1"
+      },
+      "BioUtils::FastqSeq" : {
+         "file" : "lib/BioUtils/FastqSeq.pm",
+         "version" : "v1.2.1"
+      },
+      "BioUtils::FileReformat::GbkToGff" : {
+         "file" : "lib/BioUtils/FileReformat/GbkToGff.pm",
+         "version" : "v1.2.1"
+      },
+      "BioUtils::FileReformat::GffToFas" : {
+         "file" : "lib/BioUtils/FileReformat/GffToFas.pm",
+         "version" : "v1.2.1"
+      },
+      "BioUtils::MyX::ConsensusBuilder" : {
+         "file" : "lib/BioUtils/MyX/ConsensusBuilder.pm"
+      },
+      "BioUtils::MyX::Fasta" : {
+         "file" : "lib/BioUtils/MyX/Fasta.pm"
+      },
+      "BioUtils::MyX::Fastq" : {
+         "file" : "lib/BioUtils/MyX/Fastq.pm"
+      },
+      "BioUtils::QC::ContaminantFilter" : {
+         "file" : "lib/BioUtils/QC/ContaminantFilter.pm",
+         "version" : "v1.2.1"
+      },
+      "BioUtils::QC::FastqFilter" : {
+         "file" : "lib/BioUtils/QC/FastqFilter.pm",
+         "version" : "v1.2.1"
+      },
+      "BioUtils::SeqSet::Diagnostics" : {
+         "file" : "lib/BioUtils/SeqSet/Diagnostics.pm",
+         "version" : "v1.2.1"
+      }
+   },
+   "release_status" : "stable",
+   "resources" : {
+      "license" : [
+         "http://dev.perl.org/licenses/"
+      ]
+   },
+   "version" : "v1.2.1",
+   "x_serialization_backend" : "JSON::PP version 2.27400"
+}
