@@ -53,7 +53,7 @@ sub build_consensus {
 	else {
 		MyX::Generic::Ref::UnsupportedType->throw(
 			error => "build_consensus expects HASH or ARRAY reference",
-			this_type => ref $seqs_ref,
+			given_type => ref $seqs_ref,
 			supported_types => "HASH or ARRAY reference",
 		);
 	}
@@ -179,7 +179,7 @@ sub _check_seq_ref {
 	else {
 		MyX::Generic::Ref::UnsupportedType->throw(
 			error => "Reference must be BioUtils::FastaSeq or BioUtils::FastqSeq",
-			this_type => ref $seq_obj,
+			given_type => ref $seq_obj,
 			supported_types => "BioUtils::FastqSeq, BioUtils::FastaSeq",
 		);
 	}
