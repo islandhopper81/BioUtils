@@ -12,6 +12,8 @@ use Exception::Class (
     
 );
 
+BioUtils::MyX::Fasta->Trace(1);
+
 1;
 __END__
 

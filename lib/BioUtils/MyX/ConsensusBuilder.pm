@@ -25,6 +25,8 @@ use Exception::Class (
     
 );
 
+BioUtils::MyX::ConsensusBuilder->Trace(1);
+
 1;
 __END__
 
