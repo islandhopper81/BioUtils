@@ -53,5 +53,5 @@ t/QC/ContaminantFilter.t
 t/SeqSet/Diagnostics.t
 t/FileReformat/GbkToGff.t
 t/FileReformat/GffToFas.t
-META.yml
-META.json
+MYMETA.yml
+MYMETA.json
