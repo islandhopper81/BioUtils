@@ -10,6 +10,7 @@ use Readonly;
 use Scalar::Util qw(looks_like_number);
 use MyX::Generic 0.0.1;
 use BioUtils::MyX::Fasta;
+use BioUtils::Codec::QualityScores qw(int_to_illumina_1_8);
 use UtilSY qw(:all);
 use version; our $VERSION = qv('1.2.1');
 
@@ -38,6 +39,7 @@ use version; our $VERSION = qv('1.2.1');
     sub get_seq;
     sub set_header;
     sub set_seq;
+	sub to_FastqSeq;
     sub trim_front;
     sub trim_back;
     sub substr;
@@ -45,6 +47,9 @@ use version; our $VERSION = qv('1.2.1');
     sub comp;
     sub rev_comp;
     sub translate;
+	sub _check_str;
+	sub _check_int;
+	sub _check_char;
     
     # Private Class Methods
 
@@ -122,6 +127,65 @@ use version; our $VERSION = qv('1.2.1');
         $seq_of{ident $self} = $seq;
         return 1;
     }
+
+	sub to_FastqSeq {
+		my ($self, $args_href) = @_;
+
+		# make sure the args is an href
+		if ( ref($args_href) ne "HASH" ) {
+			my $given_type = ref($args_href);
+			if ( $given_type eq "" ) { $given_type = "Non reference" }
+			MyX::Generic::Ref::UnsupportedType->throw(
+                error => "\nERROR: Unsupported argument type",
+                given_type => $given_type,
+				supported_types => "HASH"
+            );
+		}
+
+		# the arguments can be str, char, int
+		my %str_vals = map {$_ => 1 } qw(str Str STR string String STRING s);
+		my %char_vals = map {$_ => 1 } qw(char Char CHAR c);
+		my %int_vals = map {$_ => 1 } qw(int Int INT i);
+		
+		my $quals_str = "";
+		foreach my $str_val ( keys %str_vals ) {
+			if ( defined $args_href->{$str_val} ) {
+				# make sure the string length matches the seq length
+				_check_str($self, $args_href->{$str_val});
+				
+				$quals_str = $args_href->{$str_val};
+			}
+		}
+		
+		foreach my $char_val ( keys %char_vals ) {
+			if ( defined $args_href->{$char_val} ) {
+				# make sure the char value is not more than 1 character
+				_check_char($args_href->{$char_val});
+
+				$quals_str = $args_href->{$char_val} x length $self->get_seq();
+			}
+		}
+		
+		foreach my $int_val ( keys %int_vals ) {
+			if ( defined $args_href->{$int_val} ) {
+				# make sure the int is valid
+				_check_int($args_href->{$int_val});
+
+				my $qual_val = int_to_illumina_1_8($args_href->{$int_val});
+				$quals_str = $qual_val x length $self->get_seq();
+			}
+		}
+
+		# create the FastqSeq object
+		require BioUtils::FastqSeq;
+		my $fastq_seq = BioUtils::FastqSeq->new({
+			header => $self->get_header(),
+			seq => $self->get_seq(),
+			quals_str => $quals_str
+		});
+
+		return($fastq_seq);
+	}
     
     sub trim_front {
         my ($self, $len) = @_;
@@ -352,6 +416,49 @@ use version; our $VERSION = qv('1.2.1');
         
         return 1;
     }
+	
+	sub _check_str {
+		my ($self, $val) = @_;
+				
+		if ( length $val != length $self->get_seq() ) {
+			my $err_msg = "\nERROR: string is not correct length. ";
+			$err_msg = "Should be " . length $self->get_seq();
+			MyX::Generic::BadValue->throw(
+				error => $err_msg,
+				value => $val
+			);
+		}
+
+		return(1);
+	}
+
+	sub _check_int {
+		my ($val) = @_;
+
+		if ( ! looks_like_number($val) ) {
+            MyX::Generic::Digit::MustBeDigit->throw(
+                error => "\tERROR: Not a digit",
+                value => $val,
+            );
+        }
+
+		return(1);
+	}
+
+	sub _check_char {
+		my ($val) = @_;
+		
+		if ( length $val > 1 ) {
+			my $err_msg = "\nERROR: char is longer than 1 char.";
+			$err_msg .= " Perhaps you meant to use the str arg.";
+			MyX::Generic::BadValue->throw(
+				error => $err_msg,
+				value => $val
+			);
+		}
+
+		return(1);
+	}
     
     sub DESTROY {
         my ($self) = @_;

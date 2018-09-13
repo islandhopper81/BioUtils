@@ -3,6 +3,7 @@ use strict;
 use warnings;
 
 use BioUtils::FastqSeq;
+use BioUtils::FastaSeq;
 use Test::More tests => 93;
 use Test::Exception;
 

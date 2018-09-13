@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 use BioUtils::FastaSeq;
-use Test::More tests => 69;
+use Test::More tests => 84;
 use Test::Exception;
 use Test::Warn;
 
@@ -303,5 +303,51 @@ throws_ok( sub { $fasta_seq->get_id() }, qr/Undefined header/, "get_id() - caugh
     is( $seq_obj->get_seq(), "I", "setting is_gene to false");
 }
 
+# test to_FastqSeq method
+{
+	my $header = "seq1";
+    my $seq = "ATCGATCGA";
+    my $seq_obj = BioUtils::FastaSeq->new({
+        header => $header,
+        seq => $seq,
+    });
+	
+	# bad args
+	throws_ok( sub { $seq_obj->to_FastqSeq("args") }, 
+		'MyX::Generic::Ref::UnsupportedType',
+		"to_FastqSeq(args) - caught bad args" );
+	
+	# three different args cases
+	# 1. arg is char
+	my $fq_seq;
+	lives_ok( sub{ $fq_seq = $seq_obj->to_FastqSeq({char=>"I"}) },
+		"expected to live -- to_FastqSeq(char => I)" );
+	is( ref($fq_seq), "BioUtils::FastqSeq", "to_FastqSeq -- check ref" );
+	is( $fq_seq->get_header(), $header, "to_FastqSeq -- check header" );
+	is( $fq_seq->get_seq(), $seq, "to_FastqSeq -- check seq" );
+	is( $fq_seq->get_quals_str(), "IIIIIIIII", "to_FastqSeq -- check quals from char arg" );
+	throws_ok( sub{ $seq_obj->to_FastqSeq({char => "IIIIIIIII"}) },
+		"MyX::Generic::BadValue", "to_FastqSeq -- char is too long" );
+
+	# 2. arg is int
+	lives_ok( sub{ $fq_seq = $seq_obj->to_FastqSeq({int=> 40}) },
+		"expected to live -- to_FastqSeq(int => 40)" );
+	is( $fq_seq->get_quals_str(), "IIIIIIIII", "to_FastqSeq -- check quals from int arg" );
+	throws_ok( sub{ $seq_obj->to_FastqSeq({int => 4000}) },
+		"MyX::Generic::OutOfBounds",
+		"to_FastqSeq({4000}) - caught out of bounds" );
+	throws_ok( sub{ $seq_obj->to_FastqSeq({int => "A"}) },
+		"MyX::Generic::Digit::MustBeDigit",
+		"to_FastqSeq(int => A) - caught not a digit" );
+
+	# 3. arg is string
+	lives_ok( sub{ $fq_seq = $seq_obj->to_FastqSeq({str => "IIIIIIIII"}) },
+		"expected to live -- to_FastqSeq(str => IIIIIIIII)" );
+	is( $fq_seq->get_quals_str(), "IIIIIIIII", "to_FastqSeq -- check quals from str arg" );
+	throws_ok( sub{ $seq_obj->to_FastqSeq({str => "IIIIII"}) },
+		"MyX::Generic::BadValue", "to_FastqSeq -- string too short" );
+	throws_ok( sub{ $seq_obj->to_FastqSeq({str => "IIIIIIIIIIIIIIII"}) },
+		"MyX::Generic::BadValue", "to_FastqSeq -- string too long" );
+}
 
 

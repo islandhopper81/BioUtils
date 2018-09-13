@@ -9,7 +9,7 @@ use Readonly;
 use Carp qw(croak);
 use Scalar::Util qw(looks_like_number);
 use MyX::Generic 0.0.1;
-use BioUtils::FastaSeq 1.2.1;
+#use BioUtils::FastaSeq 1.2.1;
 
 use version; our $VERSION = qv('1.2.1');
 
@@ -163,6 +163,7 @@ use version; our $VERSION = qv('1.2.1');
         
         my $header = $self->get_header();
         $header =~ s/@//g;
+		require BioUtils::FastaSeq;
         my $fasta_seq = BioUtils::FastaSeq->new({
                             header => $header,
                             seq => $self->get_seq()
